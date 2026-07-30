@@ -58,6 +58,8 @@ describe.each(adversary(Signup))('$field / $family', ({ field, value }) => {
 })
 ```
 
+Runnable versions live in [`examples/`](examples/) and run as part of this repo's own test suite: [`shift-left.test.ts`](examples/shift-left.test.ts) asserts your schema agrees with each value's `valid` label (so a too-loose or too-strict schema fails CI), and [`harden-a-function.test.ts`](examples/harden-a-function.test.ts) drives an HTML escaper with the injection catalog via the `techniques` filter.
+
 ## Use it as a report (for a QA charter or a PR)
 
 ```ts
