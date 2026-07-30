@@ -2,6 +2,7 @@ import { schemaToSpec, isSchemaLike, type SchemaLike } from './introspect.js'
 import { jsonSchemaToSpec, type SchemaSpec } from './schema-spec.js'
 import { stringFixtures } from './generators/string.js'
 import { numberFixtures } from './generators/number.js'
+import { enumFixtures } from './generators/enum.js'
 import type { Fixture, Technique } from './types.js'
 
 export type { Fixture, Technique, Validity, CatalogEntry } from './types.js'
@@ -47,7 +48,8 @@ function generate(spec: SchemaSpec, opts?: AdversaryOptions): Fixture[] {
     if (fieldFilter && !fieldFilter.has(field.name)) continue
     if (field.type === 'string') out.push(...stringFixtures(field))
     else if (field.type === 'number' || field.type === 'integer') out.push(...numberFixtures(field))
-    // boolean / unknown fields yield no fixtures in this version.
+    else if (field.type === 'enum') out.push(...enumFixtures(field))
+    // boolean / array / union / unknown fields yield no fixtures yet.
   }
 
   return techFilter ? out.filter((f) => techFilter.has(f.technique)) : out
