@@ -1,25 +1,43 @@
 // Run with: node examples/demo.mjs
-// Exercises the built package end-to-end against a realistic schema.
+// Exercises the built package end-to-end against a schema that touches every
+// supported type, so the output doubles as a tour of what adversary generates.
 import { z } from 'zod'
 import { adversary, toMarkdown } from '../dist/index.js'
 
-const Signup = z.object({
-  username: z.string().min(3).max(20),
-  age: z.number().int().min(18).max(120),
-  email: z.email(),
+const Account = z.object({
+  username: z.string().min(3).max(20), // string: length + hostile catalog
+  age: z.number().int().min(18).max(120), // integer: boundaries + numeric traps
+  role: z.enum(['admin', 'member', 'guest']), // enum: out-of-set, case, homoglyph, ...
+  tags: z.array(z.string()).max(5), // array: length + per-element hazards
+  active: z.boolean(), // boolean: coercion traps
+  createdAt: z.iso.datetime(), // date-time: calendar and clock hazards
+  contact: z.union([z.string().min(3), z.number().int()]), // union: branch seams
 })
 
-const fixtures = adversary(Signup)
-console.log(`Generated ${fixtures.length} fixtures.\n`)
+const fixtures = adversary(Account)
+console.log(`Generated ${fixtures.length} fixtures across ${new Set(fixtures.map((f) => f.field)).size} fields.\n`)
 
-// Show one fixture per family for the username field.
-const seen = new Set()
-for (const f of fixtures) {
-  if (f.field !== 'username' || seen.has(f.family)) continue
-  seen.add(f.family)
-  const shown = JSON.stringify(f.value).slice(0, 32)
-  console.log(`[${f.technique}] ${f.family.padEnd(22)} ${shown}`)
+// One example fixture per field, to show the shape of the labels.
+const perField = new Map()
+for (const f of fixtures) if (!perField.has(f.field)) perField.set(f.field, f)
+for (const [field, f] of perField) {
+  const value = JSON.stringify(f.value)?.slice(0, 34) ?? String(f.value)
+  console.log(`${field.padEnd(10)} [${f.technique}] ${f.family.padEnd(26)} ${value}`)
 }
 
-console.log('\n--- markdown report (first 900 chars) ---\n')
-console.log(toMarkdown(adversary(Signup, { fields: ['username'] })).slice(0, 900))
+// A field per new type, with the failure hypothesis that makes each explainable.
+console.log('\n--- why each value might break (one per type) ---\n')
+const highlight = [
+  ['role', 'homoglyph-member'],
+  ['tags', 'element-sql-injection'],
+  ['active', 'checkbox-on'],
+  ['createdAt', 'hour-24'],
+  ['contact', 'numeric-string-confusion'],
+]
+for (const [field, family] of highlight) {
+  const f = fixtures.find((x) => x.field === field && x.family === family)
+  if (f) console.log(`[${field} / ${family}] ${JSON.stringify(f.value)}\n  ${f.failureHypothesis}\n`)
+}
+
+console.log('--- markdown report (role field, first 800 chars) ---\n')
+console.log(toMarkdown(adversary(Account, { fields: ['role'] })).slice(0, 800))

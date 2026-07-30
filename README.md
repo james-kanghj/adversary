@@ -92,6 +92,20 @@ interface Fixture {
 - **i18n** - Unicode normalization (NFC vs NFD), grapheme-vs-code-unit length, combining marks, locale-dependent case mapping, bidi overrides, homoglyphs, fullwidth forms, invisible and non-breaking whitespace, astral-plane characters, RTL text.
 - **injection** - SQL, XSS (element and attribute), template/SSTI, path traversal, CRLF, NUL byte, format string.
 
+### Type coverage
+
+`adversary` reads these from the schema and generates fixtures for each:
+
+- **string** - length boundaries (empty, min/max, an unbounded-length probe) plus the hostile i18n/injection catalog.
+- **number / integer** - min/max boundaries and the classic numeric traps (`0`, `-0`, `NaN`, `Infinity`, past `MAX_SAFE_INTEGER`, non-integers).
+- **boolean** - coercion traps (`"false"`, `"true"`, `"0"`, `1`/`0`, `""`, the `"on"` a checkbox posts) plus `false` as the valid value most often silently dropped.
+- **enum / literal** - a valid-member control and the near-misses: out-of-set, a case variant, a whitespace-padded member, a member-superstring, a homoglyph, empty, and for numeric enums a stringified member and an in-range non-member.
+- **array** - length boundaries, plus each element-type adversarial value carried into one slot of an otherwise legal array (an array of strings gets the catalog per element; an array of enums gets out-of-set), plus uniqueness, sparse-hole, and array-like duck-typing probes.
+- **date / date-time** (`z.iso.date()` / `z.iso.datetime()`) - Feb 29 of a non-leap year, out-of-range components, year 0000 and 9999, a DST spring-forward gap, a leap second, the Y2038 overflow, a numeric timezone offset, and a SQL space-separated timestamp.
+- **union** - scalar seams (a value matching no branch, a numeric string caught between a string and a number branch, a NaN branch-shift) and, for a discriminated union, an unknown or absent discriminant.
+
+Every field also gets `null` and `absent` (undefined) probes whose validity tracks the field's `nullable` and `required` flags. Nested objects are read at the top level only for now; deeper nesting is on the roadmap.
+
 ## Options
 
 ```ts
@@ -101,7 +115,7 @@ adversary(schema, { fields: ['username'] })       // only this field
 
 ## Status
 
-Early (`0.1`). It covers `string` and `number`/`integer` fields today. The direction: richer type coverage (enums, arrays, dates), a growing community-curated Unicode catalog, and framework-specific fixture emitters. The Unicode catalog is designed to accumulate - when you find a hostile input that breaks something real, it belongs here.
+Early (`0.1`), moving fast. Type coverage spans string, number/integer, boolean, enum/literal, array, date/date-time, and union today (see [Type coverage](#type-coverage)). The direction: a growing community-curated Unicode catalog, deeper object nesting, and framework-specific fixture emitters. The Unicode catalog is designed to accumulate - when you find a hostile input that breaks something real, it belongs here.
 
 It can only **name the failure class to watch for**; it never guarantees a bug exists. Treat each case as a hypothesis to check, not a verdict.
 
