@@ -103,14 +103,14 @@ export const catalog: CatalogEntry[] = [
       'The "fi" ligature (U+FB01), a single code point. Under NFKC - which many identifier, search, and username pipelines apply - it decomposes to the two ASCII letters "fi", so the string silently changes length and content: it does not equal "file" before normalization but does after, so equality and uniqueness depend on whether and where NFKC ran.',
   },
   {
-    value: 'ad­min', // U+00AD soft hyphen between "ad" and "min"
+    value: 'ad\u00ADmin', // U+00AD soft hyphen between "ad" and "min"
     technique: 'i18n',
     family: 'soft-hyphen',
     failureHypothesis:
       'A soft hyphen (U+00AD) inside the word. It is invisible in most rendering but is a real code point, so it defeats equality and uniqueness checks, splits the word for a denylist or search index, and survives in stored data while still reading as "admin".',
   },
   {
-    value: '﻿admin', // leading U+FEFF byte order mark
+    value: '\uFEFFadmin', // leading U+FEFF byte order mark
     technique: 'i18n',
     family: 'byte-order-mark',
     failureHypothesis:
