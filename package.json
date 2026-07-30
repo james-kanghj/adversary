@@ -37,7 +37,7 @@
     "edge-cases",
     "zod"
   ],
-  "author": "",
+  "author": "Hongjae James Kang",
   "license": "MIT",
   "peerDependencies": {
     "zod": "^4.0.0"
