@@ -89,8 +89,8 @@ interface Fixture {
 
 - **BVA** - boundary value analysis on `min`/`max` and length, plus the empty string and an unbounded-length probe.
 - **EP** - equivalence-class representatives and classic numeric traps: `0`, `-0`, `NaN`, `Infinity`, past `MAX_SAFE_INTEGER`, non-integers where an integer is required.
-- **i18n** - Unicode normalization (NFC vs NFD), grapheme-vs-code-unit length, combining marks, locale-dependent case mapping, bidi overrides, homoglyphs, fullwidth forms, invisible and non-breaking whitespace, astral-plane characters, RTL text.
-- **injection** - SQL, XSS (element and attribute), template/SSTI, path traversal, CRLF, NUL byte, format string.
+- **i18n** - Unicode normalization (NFC vs NFD and NFKC compatibility folding), grapheme-vs-code-unit length, combining marks, locale-dependent and length-changing case mapping (the Turkish dotted I, the German eszett), bidi overrides, homoglyphs, fullwidth forms, invisible whitespace, soft hyphen, byte order mark, line separator, non-breaking space, astral-plane characters, lone surrogates, RTL text.
+- **injection** - SQL, XSS (element and attribute), template/SSTI, spreadsheet formula (CSV), OS command, LDAP, XXE, JNDI (Log4Shell), path traversal, CRLF, NUL byte, format string.
 
 ### Type coverage
 

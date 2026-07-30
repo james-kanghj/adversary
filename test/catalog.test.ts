@@ -91,3 +91,52 @@ describe('catalog claims are true', () => {
     }
   })
 })
+
+// The expanded catalog: each claim below asserts the exact fact the entry's
+// failureHypothesis rests on, so a false or mistyped entry fails the suite.
+describe('expanded catalog claims are true', () => {
+  it('the eszett uppercases to two characters, changing length', () => {
+    const v = byFamily('case-mapping-expansion').value
+    expect(v.includes(cp(0x00df))).toBe(true) // contains U+00DF eszett
+    expect(cp(0x00df).toUpperCase()).toBe('SS')
+    expect(v.toUpperCase().length).toBeGreaterThan(v.length)
+  })
+
+  it('the fi ligature NFKC-normalizes to two ASCII letters', () => {
+    const v = byFamily('compatibility-normalization').value
+    expect(v.includes(cp(0xfb01))).toBe(true) // contains U+FB01 fi ligature
+    expect(cp(0xfb01).normalize('NFKC')).toBe('fi')
+    expect(v.normalize('NFKC').length).toBeGreaterThan(v.length)
+  })
+
+  it('the soft-hyphen value contains U+00AD and reads as "admin" without it', () => {
+    const v = byFamily('soft-hyphen').value
+    expect(v.includes(cp(0x00ad))).toBe(true)
+    expect(v.replace(new RegExp(cp(0x00ad), 'g'), '')).toBe('admin')
+  })
+
+  it('the byte-order-mark value leads with U+FEFF', () => {
+    const v = byFamily('byte-order-mark').value
+    expect(v.codePointAt(0)).toBe(0xfeff)
+  })
+
+  it('the line-separator value contains U+2028', () => {
+    expect(byFamily('line-separator').value.includes(cp(0x2028))).toBe(true)
+  })
+
+  it('the lone-surrogate value contains an unpaired surrogate and breaks encoding', () => {
+    const v = byFamily('lone-surrogate').value
+    const last = v.charCodeAt(v.length - 1)
+    expect(last).toBeGreaterThanOrEqual(0xd800)
+    expect(last).toBeLessThanOrEqual(0xdbff)
+    expect(() => encodeURIComponent(v)).toThrow() // a lone surrogate is not encodable
+  })
+
+  it('the injection additions carry their signature payloads', () => {
+    expect(byFamily('csv-injection').value.startsWith('=')).toBe(true)
+    expect(byFamily('jndi-injection').value.includes('jndi:')).toBe(true)
+    expect(byFamily('command-injection').value.includes('$(')).toBe(true)
+    expect(byFamily('ldap-injection').value.includes('*)(')).toBe(true)
+    expect(byFamily('xxe-injection').value.includes('<!ENTITY')).toBe(true)
+  })
+})
