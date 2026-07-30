@@ -1,0 +1,65 @@
+# Changelog
+
+All notable changes to this project are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
+follow semantic versioning.
+
+## [0.2.0] - 2026-07-31
+
+### Added
+
+- Type coverage for `boolean`, `enum`/`literal`, `array`, `date`/`date-time`, and
+  `union` fields. Previously only `string` and `number`/`integer` produced fixtures.
+  - **enum / literal**: a valid-member control and the near-misses (out-of-set, case
+    variant, whitespace-padded member, member-superstring, homoglyph, empty, and for
+    numeric enums a stringified member and an in-range non-member).
+  - **array**: length boundaries, each element-type adversarial value carried into one
+    slot of an otherwise legal array (an array of enums yields out-of-set, an array of
+    strings yields the hostile catalog per element), plus uniqueness, sparse-hole, and
+    array-like duck-typing probes.
+  - **boolean**: coercion traps (`"false"`, `"true"`, `"0"`, `1`/`0`, `""`, checkbox
+    `"on"`) plus `false` as the valid value most often silently dropped.
+  - **date / date-time**: Feb 29 of a non-leap year, out-of-range components, year 0000
+    and 9999, a DST spring-forward gap, a leap second, the Y2038 overflow, a numeric
+    timezone offset, and a SQL space-separated timestamp.
+  - **union**: scalar seams (no-branch-match, numeric-string confusion, a branch
+    boundary gap, a NaN branch-shift) and, for a discriminated union, an unknown or
+    absent discriminant.
+- `null` and `absent` (undefined) presence probes on every field, with validity read
+  from the field's `nullable` and `required` flags.
+- 11 curated catalog entries: NFKC compatibility folding, length-changing case mapping
+  (German eszett), soft hyphen, byte order mark, Unicode line separator, and a lone
+  surrogate (i18n); spreadsheet formula (CSV/DDE), JNDI (Log4Shell), OS command
+  substitution, LDAP filter escape, and XXE (injection).
+- GitHub Actions CI across Node 20, 22, 24, and 26 (typecheck, test, build, and a
+  built-artifact smoke test).
+- `CONTRIBUTING.md` documenting the catalog entry contract.
+
+### Changed
+
+- `enum` fields now route to a dedicated enum generator instead of receiving string
+  length-boundary and hostile-catalog fixtures, which were all merely out-of-set noise
+  for a fixed value set.
+- `date`/`date-time` string fields now produce date-shaped fixtures instead of generic
+  string ones.
+- The Markdown report renders arrays, objects, `null`, and `undefined` values (not just
+  scalars), keeping any non-ASCII inside them escaped.
+
+### Note
+
+Because `enum` and `date` fields now generate different, more accurate fixtures, the
+exact set of fixtures `adversary()` returns for a given schema has changed. The public
+API and exported types are unchanged.
+
+## [0.1.0]
+
+### Added
+
+- Initial release: explained adversarial inputs (Boundary Value Analysis, Equivalence
+  Partitioning, i18n/Unicode, injection) for `string` and `number`/`integer` fields,
+  from a Zod v4 schema (via `toJSONSchema()`) or a plain JSON Schema object.
+- `toMarkdown()` risk-ranked report with non-ASCII escaping.
+- A curated, explained catalog of hostile Unicode and injection strings.
+
+[0.2.0]: https://github.com/james-kanghj/adversary/releases/tag/v0.2.0
+[0.1.0]: https://github.com/james-kanghj/adversary/releases/tag/v0.1.0

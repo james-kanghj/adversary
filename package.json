@@ -1,6 +1,6 @@
 {
   "name": "adversary",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Generate explained adversarial test inputs - boundary values, i18n/Unicode edge cases, and injection strings - from a schema. Every case says which technique produced it and why it might break your code.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -21,7 +21,8 @@
     "build": "tsup && tsc -p tsconfig.build.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "keywords": [
     "testing",
@@ -39,6 +40,14 @@
   ],
   "author": "Hongjae James Kang",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/james-kanghj/adversary.git"
+  },
+  "bugs": {
+    "url": "https://github.com/james-kanghj/adversary/issues"
+  },
+  "homepage": "https://github.com/james-kanghj/adversary#readme",
   "peerDependencies": {
     "zod": "^4.0.0"
   },
