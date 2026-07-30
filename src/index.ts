@@ -5,6 +5,7 @@ import { numberFixtures } from './generators/number.js'
 import { enumFixtures } from './generators/enum.js'
 import { arrayFixtures } from './generators/array.js'
 import { booleanFixtures } from './generators/boolean.js'
+import { dateFixtures, isDateFormat } from './generators/date.js'
 import { presenceFixtures } from './generators/presence.js'
 import type { FieldSpec } from './schema-spec.js'
 import type { Fixture, Technique } from './types.js'
@@ -52,7 +53,9 @@ export function fromJsonSchema(json: unknown, opts?: AdversaryOptions): Fixture[
 function fieldFixtures(field: FieldSpec): Fixture[] {
   switch (field.type) {
     case 'string':
-      return stringFixtures(field)
+      // A date/date-time format supersedes the plain string generator: length
+      // boundaries and the hostile catalog are out-of-format noise for a date.
+      return isDateFormat(field) ? dateFixtures(field) : stringFixtures(field)
     case 'number':
     case 'integer':
       return numberFixtures(field)
