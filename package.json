@@ -1,0 +1,57 @@
+{
+  "name": "adversary",
+  "version": "0.1.0",
+  "description": "Generate explained adversarial test inputs - boundary values, i18n/Unicode edge cases, and injection strings - from a schema. Every case says which technique produced it and why it might break your code.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup && tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "testing",
+    "qa",
+    "test-data",
+    "fixtures",
+    "boundary-value-analysis",
+    "equivalence-partitioning",
+    "i18n",
+    "unicode",
+    "injection",
+    "adversarial",
+    "edge-cases",
+    "zod"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "tsup": "^8.5.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10",
+    "zod": "^4.4.3"
+  }
+}
