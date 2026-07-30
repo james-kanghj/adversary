@@ -4,6 +4,8 @@ import { stringFixtures } from './generators/string.js'
 import { numberFixtures } from './generators/number.js'
 import { enumFixtures } from './generators/enum.js'
 import { arrayFixtures } from './generators/array.js'
+import { booleanFixtures } from './generators/boolean.js'
+import { presenceFixtures } from './generators/presence.js'
 import type { FieldSpec } from './schema-spec.js'
 import type { Fixture, Technique } from './types.js'
 
@@ -58,6 +60,8 @@ function fieldFixtures(field: FieldSpec): Fixture[] {
       return enumFixtures(field)
     case 'array':
       return arrayFixtures(field, fieldFixtures)
+    case 'boolean':
+      return booleanFixtures(field)
     default:
       return []
   }
@@ -71,6 +75,10 @@ function generate(spec: SchemaSpec, opts?: AdversaryOptions): Fixture[] {
   for (const field of spec.fields) {
     if (fieldFilter && !fieldFilter.has(field.name)) continue
     out.push(...fieldFixtures(field))
+    // Presence probes (null / absent) apply to every top-level field. They are
+    // kept out of fieldFixtures so they are not re-seeded into array elements
+    // and union branches, only the fields the caller actually supplies.
+    out.push(...presenceFixtures(field))
   }
 
   return techFilter ? out.filter((f) => techFilter.has(f.technique)) : out
