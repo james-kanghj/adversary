@@ -120,3 +120,18 @@ describe('toMarkdown', () => {
     expect(md).toContain('\\u202E') // the escaped form appears instead
   })
 })
+
+describe('toMarkdown renders non-scalar values', () => {
+  it('shows arrays in JSON form and keeps non-ascii inside elements escaped', () => {
+    const md = toMarkdown(adversary(z.object({ tags: z.array(z.string()) })))
+    expect(md).toContain('["' + "' OR '1'='1' --" + '"]') // an array literal, not a comma-joined string
+    expect(md.includes(String.fromCodePoint(0x202e))).toBe(false) // element bidi still escaped
+    expect(md).toContain('\\u202E')
+  })
+
+  it('renders null and undefined presence probes readably', () => {
+    const md = toMarkdown(adversary(z.object({ name: z.string() })))
+    expect(md).toContain('**null** `null`')
+    expect(md).toContain('**absent** `undefined`')
+  })
+})

@@ -10,14 +10,13 @@ const TECHNIQUE_HEADING: Record<Technique, string> = {
 }
 
 /**
- * Render a value so the exact code points survive: everything outside printable
+ * Escape a string so the exact code points survive: everything outside printable
  * ASCII becomes a `\u` escape. This keeps invisible and bidi characters from
  * corrupting the report - the same discipline the catalog itself follows.
  */
-function render(value: unknown): string {
-  if (typeof value !== 'string') return String(value)
+function escapeNonAscii(s: string): string {
   let out = ''
-  for (const ch of value) {
+  for (const ch of s) {
     const cp = ch.codePointAt(0) as number
     if (cp < 0x20 || cp > 0x7e) {
       out += cp > 0xffff ? `\\u{${cp.toString(16).toUpperCase()}}` : `\\u${cp.toString(16).toUpperCase().padStart(4, '0')}`
@@ -26,6 +25,24 @@ function render(value: unknown): string {
     }
   }
   return out
+}
+
+/**
+ * Render a value for the report. Strings are quoted and escaped; other values
+ * (numbers, booleans, null, undefined, arrays, objects) are shown in a JSON-ish
+ * form with any non-ASCII inside still escaped, so an array of hostile strings
+ * cannot smuggle a bidi or invisible character into the output.
+ */
+function render(value: unknown): string {
+  if (typeof value === 'string') return `"${escapeNonAscii(value)}"`
+  if (value === undefined) return 'undefined'
+  if (value === null || typeof value === 'number' || typeof value === 'boolean') return String(value)
+  try {
+    const json = JSON.stringify(value)
+    return json === undefined ? String(value) : escapeNonAscii(json)
+  } catch {
+    return String(value)
+  }
 }
 
 function groupBy<T, K>(items: T[], key: (item: T) => K): Map<K, T[]> {
@@ -70,7 +87,7 @@ export function toMarkdown(fixtures: Fixture[], opts: MarkdownOptions = {}): str
       for (const fx of byTechnique.get(technique) as Fixture[]) {
         const validity = fx.valid === 'unknown' ? '' : ` _(${fx.valid})_`
         const len = typeof fx.value === 'string' ? ` (len ${fx.value.length})` : ''
-        lines.push(`- **${fx.family}** \`"${render(fx.value)}"\`${len}${validity}`)
+        lines.push(`- **${fx.family}** \`${render(fx.value)}\`${len}${validity}`)
         lines.push(`  ${fx.failureHypothesis}`)
       }
       lines.push('')
