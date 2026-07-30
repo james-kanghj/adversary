@@ -6,6 +6,7 @@ import { enumFixtures } from './generators/enum.js'
 import { arrayFixtures } from './generators/array.js'
 import { booleanFixtures } from './generators/boolean.js'
 import { dateFixtures, isDateFormat } from './generators/date.js'
+import { unionFixtures } from './generators/union.js'
 import { presenceFixtures } from './generators/presence.js'
 import type { FieldSpec } from './schema-spec.js'
 import type { Fixture, Technique } from './types.js'
@@ -65,6 +66,8 @@ function fieldFixtures(field: FieldSpec): Fixture[] {
       return arrayFixtures(field, fieldFixtures)
     case 'boolean':
       return booleanFixtures(field)
+    case 'union':
+      return unionFixtures(field)
     default:
       return []
   }

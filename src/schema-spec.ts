@@ -55,6 +55,8 @@ export interface FieldSpec {
   anyOf?: FieldSpec[]
   /** True for `oneOf` (exactly-one) semantics, e.g. a discriminated union. */
   exclusive?: boolean
+  /** For a discriminated union: the tag key and each branch's `const` tag value. */
+  discriminant?: { key: string; values: unknown[] }
 }
 
 export interface SchemaSpec {
@@ -87,6 +89,37 @@ type JsonSchema = {
 /** A JSON Schema branch that only permits `null`. */
 function isNullBranch(s: JsonSchema): boolean {
   return s.type === 'null'
+}
+
+/** True if a branch is an object schema with a declared property bag. */
+function isObjectBranch(s: JsonSchema): boolean {
+  const t = Array.isArray(s.type) ? s.type.includes('object') : s.type === 'object'
+  return t && s.properties !== undefined
+}
+
+/**
+ * For a set of object branches (a discriminated union), find a property that is
+ * a `const` in every branch. That property is the discriminant, and its per-branch
+ * const values are the recognized tags.
+ */
+function detectDiscriminant(branches: JsonSchema[]): { key: string; values: unknown[] } | undefined {
+  if (branches.length < 2 || !branches.every(isObjectBranch)) return undefined
+  const [first] = branches
+  if (!first?.properties) return undefined
+  for (const key of Object.keys(first.properties)) {
+    const values: unknown[] = []
+    let ok = true
+    for (const branch of branches) {
+      const prop = branch.properties?.[key]
+      if (prop && 'const' in prop && prop.const !== undefined) values.push(prop.const)
+      else {
+        ok = false
+        break
+      }
+    }
+    if (ok) return { key, values }
+  }
+  return undefined
 }
 
 function scalarType(t: string | undefined): FieldType {
@@ -159,6 +192,8 @@ function toFieldSpec(name: string, raw: JsonSchema, required: boolean): FieldSpe
       exclusive: Array.isArray(raw.oneOf),
     }
     if (nullable) spec.nullable = true
+    const discriminant = detectDiscriminant(nonNull)
+    if (discriminant) spec.discriminant = discriminant
     return spec
   }
 
