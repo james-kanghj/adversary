@@ -119,6 +119,10 @@ Early (`0.1`), moving fast. Type coverage spans string, number/integer, boolean,
 
 It can only **name the failure class to watch for**; it never guarantees a bug exists. Treat each case as a hypothesis to check, not a verdict.
 
+## Contributing
+
+The catalog is meant to accumulate. If a hostile value bit you in production, add it (with the reason it breaks) and open a PR - see [CONTRIBUTING.md](CONTRIBUTING.md). Every entry must carry a true, checkable failure hypothesis and a test that asserts the fact it rests on.
+
 ## License
 
 MIT
