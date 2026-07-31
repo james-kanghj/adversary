@@ -27,6 +27,13 @@ describe('format-aware pack injection', () => {
     expect(fx.some((f) => f.family === 'nil-uuid')).toBe(true)
   })
 
+  it('injects the hostname and ipv4 packs', () => {
+    const host = adversary(z.object({ host: z.hostname() })).filter((f) => f.field === 'host')
+    expect(host.some((f) => f.family === 'numeric-host')).toBe(true)
+    const ip = adversary(z.object({ ip: z.ipv4() })).filter((f) => f.field === 'ip')
+    expect(ip.some((f) => f.family === 'cloud-metadata')).toBe(true)
+  })
+
   it('does not inject any pack for a plain string field', () => {
     const fx = adversary(z.object({ name: z.string() }))
     for (const fam of ['crlf-header-injection', 'javascript-scheme', 'nil-uuid']) {
@@ -69,6 +76,19 @@ describe('pack claims match Zod', () => {
     }
     // the non-random-version value really is version 1 (the 13th hex digit)
     expect(byFamily('uuid', 'non-random-version').value[14]).toBe('1')
+  })
+
+  it('hostname: every pack entry passes z.hostname()', () => {
+    for (const fam of ['loopback-name', 'numeric-host', 'internal-metadata-host', 'homograph-hostname', 'trailing-dot-host', 'uppercase-host']) {
+      expect(z.hostname().safeParse(byFamily('hostname', fam).value).success, fam).toBe(true)
+    }
+  })
+
+  it('ipv4: the valid-but-dangerous addresses pass; the octal-octet form is rejected', () => {
+    for (const fam of ['loopback', 'cloud-metadata', 'unspecified-address', 'private-range', 'broadcast']) {
+      expect(z.ipv4().safeParse(byFamily('ipv4', fam).value).success, fam).toBe(true)
+    }
+    expect(z.ipv4().safeParse(byFamily('ipv4', 'octal-octet').value).success).toBe(false)
   })
 })
 

@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow semantic versioning.
 
+## [Unreleased]
+
+### Added
+
+- Two more format-aware packs. `hostname` (`z.hostname()`): the loopback name, an
+  all-numeric host that C resolvers read as an integer IP, the GCP metadata name, an
+  IDN homograph host, and the trailing-dot and uppercase forms. `ipv4` (`z.ipv4()`):
+  loopback, cloud-metadata, unspecified (`0.0.0.0`), private-range, and broadcast
+  addresses (all valid IPv4 that pass validation yet are SSRF or internal targets),
+  plus an octal-octet form (`0177.0.0.1`) that `z.ipv4()` rejects but inet_aton reads
+  as `127.0.0.1`. Every hypothesis is checked against Zod's own validator.
+
 ## [0.4.0] - 2026-07-31
 
 ### Added

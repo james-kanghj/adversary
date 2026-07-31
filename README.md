@@ -149,8 +149,10 @@ When a string field declares a `format` - `z.email()`, `z.url()`, `z.uuid()` - a
 - **email**: CRLF header injection, a punycode homograph domain, an oversized (RFC-over-limit) local part, plus-subaddressing, an IP address literal, and a DNS-rooted trailing-dot domain.
 - **url** (`uri`): `javascript:` and `data:` scheme XSS, a `file://` read, cloud-metadata / localhost / IPv6-loopback SSRF, an integer-obfuscated host, an IDN homograph host, userinfo host confusion (`https://trusted@evil.test`), and a backslash-authority parser split.
 - **uuid**: the nil UUID, a non-v4 (predictable) UUID, an uppercase UUID, the max UUID, and the hyphenless and brace-wrapped forms.
+- **hostname**: the loopback name, an all-numeric host (resolves to an integer IP), the GCP metadata name, an IDN homograph host, and the trailing-dot and uppercase forms.
+- **ipv4**: loopback, cloud-metadata, unspecified (`0.0.0.0`), private-range, and broadcast addresses, plus an octal-octet form (`0177.0.0.1`) that C resolvers read as `127.0.0.1`.
 
-Several of these **pass `z.email()` / `z.url()` / `z.uuid()` validation** yet remain dangerous, which is the point: validation alone does not make them safe. The packs live in `src/catalog.ts` and are designed to grow - a new format is a new key.
+Several of these **pass their `z.*()` validator** yet remain dangerous, which is the point: validation alone does not make them safe. The packs live in `src/catalog.ts` and are designed to grow - a new format is a new key.
 
 ## Options
 

@@ -406,4 +406,96 @@ export const packs: Record<string, CatalogEntry[]> = {
         'The brace-wrapped form. z.uuid() rejects it, but .NET Guid.ToString("B") emits exactly this, so a UUID crossing a .NET boundary arrives in a shape your validator refuses even though it denotes the same value.',
     },
   ],
+
+  // -- hostname (Zod z.hostname()) ----------------------------------------------------
+  hostname: [
+    {
+      value: 'localhost',
+      technique: 'injection',
+      family: 'loopback-name',
+      failureHypothesis:
+        'The loopback host by name. z.hostname() accepts it, so if a user-supplied hostname becomes a connection target (a webhook host, an outbound fetch, a configured upstream), it resolves to the local machine and reaches services assumed unreachable from outside (SSRF).',
+    },
+    {
+      value: '2130706433',
+      technique: 'injection',
+      family: 'numeric-host',
+      failureHypothesis:
+        'An all-digit hostname. z.hostname() accepts it as a valid name, but gethostbyname and inet_aton interpret an all-numeric host as a 32-bit integer address - 2130706433 is 127.0.0.1 - so a check that assumes a hostname is a DNS name is bypassed while the OS still resolves it to loopback (SSRF).',
+    },
+    {
+      value: 'metadata.google.internal',
+      technique: 'injection',
+      family: 'internal-metadata-host',
+      failureHypothesis:
+        'A valid hostname on an internal-only namespace (here the GCP metadata name). z.hostname() accepts it, so a user-supplied host a public allowlist never anticipated can resolve, inside the network, to the cloud metadata service or another internal endpoint (SSRF).',
+    },
+    {
+      value: 'xn--80ak6aa92e.com',
+      technique: 'i18n',
+      family: 'homograph-hostname',
+      failureHypothesis:
+        'An internationalized (punycode) hostname. z.hostname() accepts it, and it can render as a non-ASCII visual lookalike of a trusted host, so an allowlist keyed on the ASCII spelling never matches and a human trusts the wrong host.',
+    },
+    {
+      value: 'example.com.',
+      technique: 'EP',
+      family: 'trailing-dot-host',
+      failureHypothesis:
+        'A trailing dot, the DNS-absolute (rooted) form. z.hostname() accepts it and DNS resolves example.com. and example.com to the same zone, but the two strings differ, so an allowlist, cache key, or uniqueness check keyed on the exact string treats one host as two.',
+    },
+    {
+      value: 'EXAMPLE.COM',
+      technique: 'EP',
+      family: 'uppercase-host',
+      failureHypothesis:
+        'An uppercase hostname. z.hostname() accepts it, and DNS is case-insensitive so it resolves to the same host, but a string comparison, allowlist, or cache key is case-sensitive, so the same host can miss a match or duplicate an entry across tiers.',
+    },
+  ],
+
+  // -- ipv4 (Zod z.ipv4()) ------------------------------------------------------------
+  ipv4: [
+    {
+      value: '127.0.0.1',
+      technique: 'injection',
+      family: 'loopback',
+      failureHypothesis:
+        'The loopback address. z.ipv4() accepts it (a valid IPv4), so a user-supplied IP used as a connection target reaches a service on the local machine that was assumed unreachable from outside (SSRF).',
+    },
+    {
+      value: '169.254.169.254',
+      technique: 'injection',
+      family: 'cloud-metadata',
+      failureHypothesis:
+        'The cloud metadata address (169.254.169.254). z.ipv4() accepts it as a valid IPv4, so if it becomes a fetch target it exposes instance credentials and configuration from the metadata service (SSRF-to-credential-theft).',
+    },
+    {
+      value: '0.0.0.0',
+      technique: 'injection',
+      family: 'unspecified-address',
+      failureHypothesis:
+        'The unspecified address 0.0.0.0. z.ipv4() accepts it, and on many stacks connecting to 0.0.0.0 reaches a service listening on all interfaces of the local host, so it bypasses an SSRF denylist that blocks only 127.0.0.1.',
+    },
+    {
+      value: '10.0.0.1',
+      technique: 'injection',
+      family: 'private-range',
+      failureHypothesis:
+        'A private (RFC 1918) address. z.ipv4() accepts it, so a user-supplied IP used as a target can reach internal hosts - databases, admin panels, other services - that are not meant to be addressable from user input (SSRF).',
+    },
+    {
+      value: '255.255.255.255',
+      technique: 'BVA',
+      family: 'broadcast',
+      failureHypothesis:
+        'The limited broadcast address 255.255.255.255. z.ipv4() accepts it; a valid but special IPv4 that networking code may treat specially, and the all-ones boundary of the address space.',
+    },
+    {
+      value: '0177.0.0.1',
+      technique: 'injection',
+      family: 'octal-octet',
+      failureHypothesis:
+        'An octet with a leading zero. z.ipv4() rejects it, but inet_aton and many C-backed resolvers read a leading-zero octet as octal, so 0177.0.0.1 becomes 127.0.0.1 - a string denylist matching "127." misses it while the OS resolves it to loopback (SSRF).',
+    },
+  ],
 }
