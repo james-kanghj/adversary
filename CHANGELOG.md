@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow semantic versioning.
 
+## [0.3.0] - 2026-07-31
+
+### Added
+
+- A command-line interface: `adversary <schema-file> [options]`. It loads a Zod schema
+  from a `.ts` / `.js` / `.mjs` / `.cjs` module (its default export, a sole schema-like
+  export, or `--export <name>`) or a JSON Schema from a `.json` file, and prints fixtures
+  as JSON or a Markdown report (`--report`), with `--technique` and `--field` filters.
+  Loading a `.ts` file uses Node's built-in type stripping. In JSON output, values JSON
+  cannot represent are encoded so nothing is silently lost: the `absent` probe becomes
+  `null`, and `NaN` / `Infinity` / `-Infinity` / `-0` become those literal strings.
+- Runnable example tests under `examples/` (a shift-left schema-hardening suite and an
+  HTML-escaper hardened with the injection catalog) that run as part of the test suite.
+
+### Fixed
+
+- `fromJsonSchema` no longer throws `Cannot use 'in' operator` on a non-object JSON Schema
+  (a bare scalar, array, or null); such a node now reduces to a field with no fixtures.
+
 ## [0.2.0] - 2026-07-31
 
 ### Added
@@ -61,5 +80,6 @@ API and exported types are unchanged.
 - `toMarkdown()` risk-ranked report with non-ASCII escaping.
 - A curated, explained catalog of hostile Unicode and injection strings.
 
+[0.3.0]: https://github.com/james-kanghj/adversary/releases/tag/v0.3.0
 [0.2.0]: https://github.com/james-kanghj/adversary/releases/tag/v0.2.0
 [0.1.0]: https://github.com/james-kanghj/adversary/releases/tag/v0.1.0
