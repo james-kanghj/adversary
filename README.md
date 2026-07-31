@@ -8,6 +8,8 @@
 
 Generate **explained** adversarial test inputs from a schema - boundary values, i18n/Unicode edge cases, and injection strings, each labelled with the technique that produced it and a plain-language reason it might fail.
 
+<img src="https://raw.githubusercontent.com/james-kanghj/adversary/main/examples/demo.gif" alt="adversary CLI: a Zod schema turned into explained adversarial inputs" width="820">
+
 </div>
 
 Point `adversary` at a Zod schema and get back the values most likely to break your code, each with a technique label and a plain-language failure hypothesis.
