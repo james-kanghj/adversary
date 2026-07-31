@@ -36,6 +36,8 @@ adversary(Signup)
 // ]
 ```
 
+**No AI, no hallucination.** Every `failureHypothesis` is hand-curated, not generated at run time, and each is backed by a test that asserts the exact fact it rests on - `'ß'.toUpperCase()` is `'SS'`, `z.url()` really does accept `javascript:`, the family emoji is 11 UTF-16 code units. The explanations are deterministic and offline: no API key, no cost, and no made-up reasons. A wrong or overclaimed one fails CI.
+
 ## Who it is for
 
 Anyone who validates untrusted input with **Zod** - a form body, an API request, a webhook, a config file - and wants that input handling tested against hostile values, without hand-writing every edge case or being an i18n/security expert. It packages QA craft (boundary-value analysis, equivalence partitioning, a curated Unicode and injection catalog) so you get it from a schema for free. QA engineers use it to automate what they would test by hand; the report also serves a security or PR review.
