@@ -49,12 +49,13 @@ describe('pack claims match Zod', () => {
     expect(z.email().safeParse(byFamily('email', 'plus-subaddressing').value).success).toBe(true)
     expect(z.email().safeParse(byFamily('email', 'crlf-header-injection').value).success).toBe(false)
     expect(z.email().safeParse(byFamily('email', 'address-literal-ip').value).success).toBe(false)
+    expect(z.email().safeParse(byFamily('email', 'domain-trailing-dot').value).success).toBe(false)
     // the oversized local part is genuinely past the RFC 5321 limit of 64
     expect(byFamily('email', 'oversized-local-part').value.split('@')[0]?.length).toBe(65)
   })
 
   it('uri: z.url() accepts every dangerous scheme and host in the pack', () => {
-    for (const fam of ['javascript-scheme', 'data-scheme', 'file-scheme', 'cloud-metadata-ssrf', 'obfuscated-host', 'userinfo-host-confusion']) {
+    for (const fam of ['javascript-scheme', 'data-scheme', 'file-scheme', 'cloud-metadata-ssrf', 'obfuscated-host', 'userinfo-host-confusion', 'localhost-ssrf', 'ipv6-loopback-ssrf', 'idn-homograph-host']) {
       expect(z.url().safeParse(byFamily('uri', fam).value).success, fam).toBe(true)
     }
   })

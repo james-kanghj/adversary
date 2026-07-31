@@ -278,6 +278,13 @@ export const packs: Record<string, CatalogEntry[]> = {
       failureHypothesis:
         'An address literal with an IP host in brackets. z.email() rejects it, but RFC 5321 permits it, so a more permissive validator or MTA can accept it and attempt delivery straight to an IP address, bypassing domain-based routing and allow/deny lists.',
     },
+    {
+      value: 'user@example.com.',
+      technique: 'EP',
+      family: 'domain-trailing-dot',
+      failureHypothesis:
+        'A trailing dot on the domain, the DNS-absolute (rooted) form. z.email() rejects it, but DNS resolves example.com. and example.com to the same zone and some MTAs accept it, so a stricter-than-DNS validator refuses mail an MTA would deliver, while a looser one treats the same mailbox as two distinct addresses.',
+    },
   ],
 
   // -- uri (Zod z.url()) --------------------------------------------------------------
@@ -294,7 +301,7 @@ export const packs: Record<string, CatalogEntry[]> = {
       technique: 'injection',
       family: 'data-scheme',
       failureHypothesis:
-        'A data: URL carrying HTML. z.url() accepts it, and if it is used as an href or an iframe src, the browser renders attacker-controlled HTML and script straight from the URL.',
+        'A data: URL carrying HTML. z.url() accepts it, and where the app allows data: as a resource (an iframe or embed src, a download, or a non-strict context), the browser renders attacker-controlled content straight from the URL - a scheme many CSP and sanitizer configs overlook.',
     },
     {
       value: 'file:///etc/passwd',
@@ -323,6 +330,27 @@ export const packs: Record<string, CatalogEntry[]> = {
       family: 'userinfo-host-confusion',
       failureHypothesis:
         'A URL whose authority puts a trusted-looking name in the userinfo, before the @, so the real host is evil.test. z.url() accepts it; a human or a naive check scanning for "google.com" is fooled while the browser or fetch connects to the host after the @.',
+    },
+    {
+      value: 'http://localhost/',
+      technique: 'injection',
+      family: 'localhost-ssrf',
+      failureHypothesis:
+        'A URL pointing at the loopback host by name. z.url() accepts it, so a server-side fetch of a user-supplied URL reaches a service bound to localhost that was assumed unreachable from outside (SSRF), and the name form slips past allow/deny lists that only enumerate IP literals.',
+    },
+    {
+      value: 'http://[::1]/',
+      technique: 'injection',
+      family: 'ipv6-loopback-ssrf',
+      failureHypothesis:
+        'The IPv6 loopback [::1], the IPv6 equal of 127.0.0.1. z.url() accepts it, so an SSRF filter that blocks only IPv4 loopback forms is bypassed while the request still reaches a local service on a dual-stack host.',
+    },
+    {
+      value: 'http://xn--80ak6aa92e.com/',
+      technique: 'i18n',
+      family: 'idn-homograph-host',
+      failureHypothesis:
+        'A URL host as an internationalized (punycode) domain. z.url() accepts it, and the host can render as a non-ASCII visual lookalike of a trusted domain, so a link or an allowlist that a human or an ASCII-only check trusts actually points elsewhere.',
     },
   ],
 
