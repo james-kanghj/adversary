@@ -4,6 +4,35 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow semantic versioning.
 
+## [1.0.0] - 2026-07-31
+
+First stable release. The public API - `adversary`, `fromJsonSchema`, `toMarkdown`, `catalog`,
+`packs`, and the exported types - now follows semantic versioning: a breaking change requires a
+major bump. Everything from 0.2.0 through 0.6.0 (full type coverage, presence probes, the CLI,
+runnable examples, and the seven format-aware packs) ships as part of 1.0.
+
+### Changed (breaking)
+
+- `Fixture.valid` is renamed to `validity`, matching the exported `Validity` type. The CLI's JSON
+  output key changes from `valid` to `validity` accordingly.
+- The internal representation is no longer public: `jsonSchemaToSpec`, `FieldSpec`, `SchemaSpec`,
+  and `FieldType` are no longer exported, so they stay free to change without a major bump.
+- `fromJsonSchema` now throws a `TypeError` on a non-object argument instead of returning
+  presence-only fixtures, matching `adversary()`.
+- `catalog` and `packs` are exported as `readonly` types.
+
+### Fixed
+
+- Validity is no longer mislabeled for exclusive numeric bounds (`z.number().gt(0)` / `positive()`),
+  fixed and narrow ranges (`z.string().length(3)`, `z.number().min(5).max(5)`), arrays whose
+  elements carry a format the filler cannot satisfy (`z.array(z.email())`), and tuples
+  (`prefixItems`, which also no longer trigger a spurious unbounded-length probe).
+
+### Added
+
+- `engines` declares Node `>=20`, and CJS type declarations (`dist/index.d.cts`) so `require()` /
+  `nodenext` consumers resolve correct types instead of ESM-only ones.
+
 ## [0.6.0] - 2026-07-31
 
 ### Added
@@ -124,6 +153,7 @@ API and exported types are unchanged.
 - `toMarkdown()` risk-ranked report with non-ASCII escaping.
 - A curated, explained catalog of hostile Unicode and injection strings.
 
+[1.0.0]: https://github.com/james-kanghj/adversary/releases/tag/v1.0.0
 [0.6.0]: https://github.com/james-kanghj/adversary/releases/tag/v0.6.0
 [0.5.0]: https://github.com/james-kanghj/adversary/releases/tag/v0.5.0
 [0.4.0]: https://github.com/james-kanghj/adversary/releases/tag/v0.4.0
