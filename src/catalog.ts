@@ -182,7 +182,7 @@ export const catalog: CatalogEntry[] = [
       'Embedded CR/LF. Forges extra lines in logs (log forging) and, if reflected into HTTP headers, splits the response to inject headers or content.',
   },
   {
-    value: 'safe.jpg .exe', // U+0000 NUL byte
+    value: 'safe.jpg\u0000.exe', // U+0000 NUL byte
     technique: 'injection',
     family: 'null-byte',
     failureHypothesis:
@@ -496,6 +496,91 @@ export const packs: Record<string, CatalogEntry[]> = {
       family: 'octal-octet',
       failureHypothesis:
         'An octet with a leading zero. z.ipv4() rejects it, but inet_aton and many C-backed resolvers read a leading-zero octet as octal, so 0177.0.0.1 becomes 127.0.0.1 - a string denylist matching "127." misses it while the OS resolves it to loopback (SSRF).',
+    },
+  ],
+
+  // -- ipv6 (Zod z.ipv6()) ------------------------------------------------------------
+  ipv6: [
+    {
+      value: '::1',
+      technique: 'injection',
+      family: 'loopback',
+      failureHypothesis:
+        'The IPv6 loopback. z.ipv6() accepts it (a valid IPv6), so a user-supplied address used as a connection target reaches a service on the local machine that was assumed unreachable from outside (SSRF).',
+    },
+    {
+      value: '::ffff:127.0.0.1',
+      technique: 'injection',
+      family: 'ipv4-mapped',
+      failureHypothesis:
+        'An IPv4-mapped IPv6 address that embeds 127.0.0.1. z.ipv6() accepts it and the stack resolves it to the IPv4 loopback, so an SSRF filter that blocks ::1 and 127.0.0.1 as strings but not the mapped form is bypassed (the same trick maps 169.254.169.254 to reach cloud metadata).',
+    },
+    {
+      value: '::',
+      technique: 'injection',
+      family: 'unspecified-address',
+      failureHypothesis:
+        'The unspecified address ::. z.ipv6() accepts it, and on many stacks connecting to :: reaches a service listening on all interfaces of the local host, so it bypasses an SSRF denylist that blocks only ::1.',
+    },
+    {
+      value: 'fe80::1',
+      technique: 'injection',
+      family: 'link-local',
+      failureHypothesis:
+        'A link-local address. z.ipv6() accepts it, so a user-supplied target can reach a neighbour on the local link - including, on some clouds, an IPv6 metadata or gateway endpoint - that was never meant to be addressable from user input (SSRF).',
+    },
+    {
+      value: 'fc00::1',
+      technique: 'injection',
+      family: 'ula-private',
+      failureHypothesis:
+        'A unique-local (private, RFC 4193) address. z.ipv6() accepts it, so a user-supplied target can reach internal IPv6 hosts not meant to be addressable from user input (SSRF) - the IPv6 analogue of the RFC 1918 ranges.',
+    },
+    {
+      value: '0:0:0:0:0:0:0:1',
+      technique: 'EP',
+      family: 'uncompressed-loopback',
+      failureHypothesis:
+        'The fully-expanded loopback, the same address as ::1 but a different string. z.ipv6() accepts it, so an allowlist, denylist, or dedup keyed on the exact string treats it as a different host from ::1 while the stack routes both to loopback.',
+    },
+  ],
+
+  // -- base64 (Zod z.base64()) --------------------------------------------------------
+  base64: [
+    {
+      value: 'PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==',
+      technique: 'injection',
+      family: 'decodes-to-xss',
+      failureHypothesis:
+        'Valid base64 that decodes to <script>alert(1)</script>. z.base64() checks the encoding, not the content, so it passes; if the app decodes the value and renders it into HTML without escaping, the decoded script runs (stored XSS). Encoding validation is not content validation.',
+    },
+    {
+      value: 'JyBPUiAnMSc9JzEnIC0t',
+      technique: 'injection',
+      family: 'decodes-to-sql',
+      failureHypothesis:
+        "Valid base64 that decodes to a SQL tautology (' OR '1'='1' --). z.base64() accepts it because it is well-formed base64, but if the decoded bytes reach a query built by concatenation the injection fires - the payload simply travelled past validation in encoded form.",
+    },
+    {
+      value: 'c2FmZS5qcGcALmV4ZQ==',
+      technique: 'injection',
+      family: 'decodes-to-nul',
+      failureHypothesis:
+        'Valid base64 whose decoded bytes contain a NUL. z.base64() accepts it; after decoding, the embedded NUL truncates the string in C-backed layers (filesystem, some native drivers), so an extension or content check on the decoded value can be defeated.',
+    },
+    {
+      value: 'fn5-Pz8_',
+      technique: 'EP',
+      family: 'url-safe-alphabet',
+      failureHypothesis:
+        'The URL-safe base64 alphabet (- and _ instead of + and /). Standard z.base64() rejects it, but a base64url decoder accepts it, so a token minted by a base64url system fails this validator while the two alphabets disagree on the same bytes.',
+    },
+    {
+      value: 'aGVs\nbG8gd29ybGQgZm9v',
+      technique: 'EP',
+      family: 'embedded-newline',
+      failureHypothesis:
+        'Base64 with an embedded newline, the MIME/PEM line-wrapped form. z.base64() rejects it, but MIME and many lenient decoders strip whitespace and accept it, so a value produced by an email or certificate pipeline is refused here yet decodes fine elsewhere.',
     },
   ],
 }

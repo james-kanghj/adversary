@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow semantic versioning.
 
+## [Unreleased]
+
+### Added
+
+- Two more format-aware packs. `ipv6` (`z.ipv6()`): loopback, an IPv4-mapped address
+  (`::ffff:127.0.0.1`) that maps to IPv4 loopback and bypasses `::1` / `127.0.0.1` string
+  filters, unspecified (`::`), link-local, unique-local (private), and the uncompressed
+  loopback form - all valid IPv6 that pass validation yet are SSRF or internal targets.
+  `base64` (`z.base64()`): valid base64 that decodes to an XSS, SQL, or NUL-byte payload
+  (encoding validation is not content validation), plus the URL-safe alphabet and a
+  line-wrapped form that standard base64 rejects but base64url / MIME decoders accept.
+
+### Changed
+
+- The null-byte catalog entry is now written as a `\u0000` escape, so the catalog source
+  carries no raw control characters.
+
 ## [0.5.0] - 2026-07-31
 
 ### Added

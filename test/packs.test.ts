@@ -34,6 +34,13 @@ describe('format-aware pack injection', () => {
     expect(ip.some((f) => f.family === 'cloud-metadata')).toBe(true)
   })
 
+  it('injects the ipv6 and base64 packs', () => {
+    const v6 = adversary(z.object({ addr: z.ipv6() })).filter((f) => f.field === 'addr')
+    expect(v6.some((f) => f.family === 'ipv4-mapped')).toBe(true)
+    const blob = adversary(z.object({ blob: z.base64() })).filter((f) => f.field === 'blob')
+    expect(blob.some((f) => f.family === 'decodes-to-xss')).toBe(true)
+  })
+
   it('does not inject any pack for a plain string field', () => {
     const fx = adversary(z.object({ name: z.string() }))
     for (const fam of ['crlf-header-injection', 'javascript-scheme', 'nil-uuid']) {
@@ -89,6 +96,24 @@ describe('pack claims match Zod', () => {
       expect(z.ipv4().safeParse(byFamily('ipv4', fam).value).success, fam).toBe(true)
     }
     expect(z.ipv4().safeParse(byFamily('ipv4', 'octal-octet').value).success).toBe(false)
+  })
+
+  it('ipv6: every pack entry passes z.ipv6()', () => {
+    for (const fam of ['loopback', 'ipv4-mapped', 'unspecified-address', 'link-local', 'ula-private', 'uncompressed-loopback']) {
+      expect(z.ipv6().safeParse(byFamily('ipv6', fam).value).success, fam).toBe(true)
+    }
+  })
+
+  it('base64: decode payloads pass and decode to their hostile bytes; alt encodings are rejected', () => {
+    for (const fam of ['decodes-to-xss', 'decodes-to-sql', 'decodes-to-nul']) {
+      expect(z.base64().safeParse(byFamily('base64', fam).value).success, fam).toBe(true)
+    }
+    for (const fam of ['url-safe-alphabet', 'embedded-newline']) {
+      expect(z.base64().safeParse(byFamily('base64', fam).value).success, fam).toBe(false)
+    }
+    // the decoded content really is the hostile payload the hypothesis names
+    expect(Buffer.from(byFamily('base64', 'decodes-to-xss').value, 'base64').toString('utf8')).toBe('<script>alert(1)</script>')
+    expect(Buffer.from(byFamily('base64', 'decodes-to-nul').value, 'base64').toString('utf8')).toContain(String.fromCharCode(0))
   })
 })
 

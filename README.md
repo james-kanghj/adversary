@@ -151,6 +151,8 @@ When a string field declares a `format` - `z.email()`, `z.url()`, `z.uuid()` - a
 - **uuid**: the nil UUID, a non-v4 (predictable) UUID, an uppercase UUID, the max UUID, and the hyphenless and brace-wrapped forms.
 - **hostname**: the loopback name, an all-numeric host (resolves to an integer IP), the GCP metadata name, an IDN homograph host, and the trailing-dot and uppercase forms.
 - **ipv4**: loopback, cloud-metadata, unspecified (`0.0.0.0`), private-range, and broadcast addresses, plus an octal-octet form (`0177.0.0.1`) that C resolvers read as `127.0.0.1`.
+- **ipv6**: loopback, an IPv4-mapped address (`::ffff:127.0.0.1`) that bypasses `::1` / `127.0.0.1` string filters, unspecified (`::`), link-local, and unique-local addresses, plus the uncompressed loopback form.
+- **base64**: valid base64 that decodes to an XSS, a SQL, or a NUL-byte payload (encoding is not content), plus the URL-safe alphabet and a line-wrapped form other decoders accept.
 
 Several of these **pass their `z.*()` validator** yet remain dangerous, which is the point: validation alone does not make them safe. The packs live in `src/catalog.ts` and are designed to grow - a new format is a new key.
 
