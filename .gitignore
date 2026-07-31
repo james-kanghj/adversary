@@ -5,3 +5,8 @@ coverage/
 .DS_Store
 .idea/
 .vscode/
+
+# Secrets - never commit npm auth tokens or a local .npmrc
+npm-token.txt
+*.token
+.npmrc
