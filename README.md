@@ -40,7 +40,9 @@ adversary(Signup)
 
 ## Who it is for
 
-Anyone who validates untrusted input with **Zod** - a form body, an API request, a webhook, a config file - and wants that input handling tested against hostile values, without hand-writing every edge case or being an i18n/security expert. It packages QA craft (boundary-value analysis, equivalence partitioning, a curated Unicode and injection catalog) so you get it from a schema for free. QA engineers use it to automate what they would test by hand; the report also serves a security or PR review.
+Anyone who validates untrusted input with **Zod** - a form body, an API request, a webhook, a config file - and wants that input handling tested against hostile values, without hand-writing every edge case or being an i18n/security expert. It packages QA craft (boundary-value analysis, equivalence partitioning, a curated Unicode and injection catalog) so you get it from a schema for free.
+
+**QA engineers** who have no Zod schema can start from an **OpenAPI spec** instead - `npx adversary ./openapi.yaml --report` gives a per-endpoint, explained hostile-input list with no code to write. It automates what you would otherwise test by hand; the report also serves a security or PR review.
 
 ## When you would reach for it
 
@@ -124,9 +126,28 @@ npx adversary ./schema.ts                       # JSON fixtures on stdout
 npx adversary ./schema.ts --report              # Markdown risk report
 npx adversary ./schema.ts --technique injection,i18n
 npx adversary ./api.schema.json --field email   # a JSON Schema file, one field
+npx adversary ./openapi.yaml --report           # an OpenAPI spec, per operation
 ```
 
-The file may be a `.ts` / `.js` / `.mjs` / `.cjs` module exporting a Zod schema (its default export, or `--export <name>`), or a `.json` file containing a JSON Schema. Loading a `.ts` file uses Node's built-in type stripping (Node 22.18+).
+The file may be a `.ts` / `.js` / `.mjs` / `.cjs` module exporting a Zod schema (its default export, or `--export <name>`), a `.json` file containing a JSON Schema, or an **OpenAPI 3.x document** (`.json`, or `.yaml`/`.yml` with the optional `yaml` package). Loading a `.ts` file uses Node's built-in type stripping (Node 22.18+).
+
+### From an OpenAPI spec (no Zod schema needed)
+
+If you have an API spec but no Zod schema - the common case for QA - point the CLI straight at it. Each operation's JSON request body and its parameters are reduced to a schema and reported separately, so you get an explained, per-endpoint hostile-input list without writing any code:
+
+```sh
+npx adversary ./openapi.yaml --report                    # every operation
+npx adversary ./openapi.yaml --technique injection       # JSON, injection only
+```
+
+```
+# POST /webhooks (body)
+...
+# GET /users/{id} (params)
+...
+```
+
+JSON output is grouped `[{ method, path, source: 'body' | 'params', fixtures }]`. Internal `$ref`s are resolved and OpenAPI 3.0 `nullable: true` is honored. The same is available in code via `fromOpenApi(doc)`.
 
 ```
 --report          Markdown report instead of JSON fixtures
@@ -204,11 +225,12 @@ The public surface (stable under semver from `1.0`):
 
 - **`adversary(schema, options?)`** - fixtures from a Zod v4 schema (anything with `toJSONSchema()`). Throws a `TypeError` if the argument is not schema-like.
 - **`fromJsonSchema(json, options?)`** - fixtures from a plain JSON Schema object. Throws a `TypeError` if the argument is not an object.
+- **`fromOpenApi(doc, options?)`** - fixtures from an OpenAPI 3.x document, grouped per operation: `Array<{ method, path, source: 'body' | 'params', fixtures }>`. Resolves internal `$ref`s and honors OpenAPI 3.0 `nullable`. Throws a `TypeError` if the argument is not an OpenAPI document (`isOpenApiDocument(doc)` tests this).
 - **`toMarkdown(fixtures, { title? })`** - a risk-ranked Markdown report (injection first), with non-ASCII escaped to `\uXXXX`.
 - **`catalog`** - the general curated hostile-input catalog (`readonly CatalogEntry[]`), injected into every string field.
 - **`packs`** - the format-aware packs, `Readonly<Record<format, readonly CatalogEntry[]>>` keyed by JSON Schema `format` (`email`, `uri`, `uuid`, `hostname`, `ipv4`, `ipv6`, `base64`).
 
-`options` is `{ techniques?: Technique[]; fields?: string[] }`. Exported types: `Fixture`, `Technique`, `Validity`, `CatalogEntry`, `SchemaLike`, `AdversaryOptions`, `MarkdownOptions`. To list a schema's field names: `[...new Set(fixtures.map((f) => f.field))]`.
+`options` is `{ techniques?: Technique[]; fields?: string[] }`. Exported types: `Fixture`, `Technique`, `Validity`, `CatalogEntry`, `SchemaLike`, `AdversaryOptions`, `MarkdownOptions`, `OpenApiFixtures`. To list a schema's field names: `[...new Set(fixtures.map((f) => f.field))]`.
 
 ## Status
 

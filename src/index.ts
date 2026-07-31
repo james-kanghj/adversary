@@ -8,12 +8,14 @@ import { booleanFixtures } from './generators/boolean.js'
 import { dateFixtures, isDateFormat } from './generators/date.js'
 import { unionFixtures } from './generators/union.js'
 import { presenceFixtures } from './generators/presence.js'
+import { openApiSchemas } from './openapi.js'
 import type { FieldSpec } from './schema-spec.js'
 import type { Fixture, Technique } from './types.js'
 
 export type { Fixture, Technique, Validity, CatalogEntry } from './types.js'
 export type { SchemaLike } from './introspect.js'
 export { catalog, packs } from './catalog.js'
+export { isOpenApiDocument } from './openapi.js'
 export { toMarkdown, type MarkdownOptions } from './report.js'
 // Note: the internal field/schema spec (FieldSpec, SchemaSpec, jsonSchemaToSpec)
 // is intentionally not part of the public API - it is free to change without a
@@ -47,6 +49,28 @@ export function fromJsonSchema(json: unknown, opts?: AdversaryOptions): Fixture[
     throw new TypeError('fromJsonSchema(json): expected a JSON Schema object, e.g. { type: "object", properties: {...} }.')
   }
   return generate(jsonSchemaToSpec(json), opts)
+}
+
+/** Fixtures for one operation of an OpenAPI document. */
+export interface OpenApiFixtures {
+  /** Uppercase HTTP method, e.g. "POST". */
+  method: string
+  /** The path template, e.g. "/users/{id}". */
+  path: string
+  /** Whether these fixtures target the request body or the operation's parameters. */
+  source: 'body' | 'params'
+  fixtures: Fixture[]
+}
+
+/**
+ * Generate fixtures from an OpenAPI 3.x document, grouped per operation - the entry
+ * point for anyone who has an API spec but no Zod schema. Each operation's JSON
+ * request body and its parameters become a group of {@link Fixture}s.
+ */
+export function fromOpenApi(doc: unknown, opts?: AdversaryOptions): OpenApiFixtures[] {
+  return openApiSchemas(doc)
+    .map((s) => ({ method: s.method, path: s.path, source: s.source, fixtures: fromJsonSchema(s.schema, opts) }))
+    .filter((group) => group.fixtures.length > 0)
 }
 
 /**

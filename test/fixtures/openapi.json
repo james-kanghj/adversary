@@ -1,0 +1,30 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "demo", "version": "1.0.0" },
+  "paths": {
+    "/webhooks": {
+      "post": {
+        "requestBody": {
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Webhook" } } }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "note", "in": "query", "schema": { "type": "string", "nullable": true } }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Webhook": {
+        "type": "object",
+        "properties": { "callbackUrl": { "type": "string", "format": "uri" } },
+        "required": ["callbackUrl"]
+      }
+    }
+  }
+}

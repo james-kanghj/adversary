@@ -2,8 +2,8 @@ import { parseArgs } from 'node:util'
 import { readFile } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 import { resolve, extname } from 'node:path'
-import { adversary, fromJsonSchema, toMarkdown } from './index.js'
-import type { Fixture, Technique } from './index.js'
+import { adversary, fromJsonSchema, fromOpenApi, isOpenApiDocument, toMarkdown } from './index.js'
+import type { Fixture, OpenApiFixtures, Technique } from './index.js'
 
 /** Injectable IO so `run` is testable without touching the real process. */
 export interface CliIO {
@@ -17,10 +17,12 @@ const TECHNIQUES: Technique[] = ['BVA', 'EP', 'i18n', 'injection']
 const HELP = `adversary - generate explained adversarial test inputs from a schema
 
 Usage:
-  adversary <schema-file> [options]
+  adversary <source> [options]
 
-<schema-file>   A .ts/.js/.mjs/.cjs module exporting a Zod (v4) schema, or a
-                .json file containing a JSON Schema.
+<source>        A .ts/.js/.mjs/.cjs module exporting a Zod (v4) schema, a .json
+                file containing a JSON Schema, or an OpenAPI 3.x document (.json,
+                or .yaml/.yml with the optional "yaml" package). An OpenAPI doc is
+                reported per operation (each request body and its parameters).
 
 Options:
   --report            Output a Markdown risk report instead of JSON fixtures
@@ -36,7 +38,8 @@ Options:
 Examples:
   adversary ./schema.ts --report
   adversary ./schema.ts --technique injection,i18n
-  adversary ./api.schema.json --field email
+  adversary ./openapi.json --report
+  adversary ./openapi.yaml --technique injection
 
 Notes:
   In JSON output, non-representable values are encoded so nothing is silently
@@ -94,22 +97,54 @@ function jsonReplacer(_key: string, value: unknown): unknown {
   return value === undefined ? null : value
 }
 
-/** Load a schema file and return all fixtures it produces (unfiltered). */
-async function generate(file: string, cwd: string, exportName: string | undefined): Promise<Fixture[]> {
+/** The two shapes a source can reduce to: a flat schema, or an OpenAPI doc grouped by operation. */
+type Loaded = { kind: 'flat'; fixtures: Fixture[] } | { kind: 'openapi'; groups: OpenApiFixtures[] }
+
+const DATA_EXTS = new Set(['.json', '.yaml', '.yml'])
+
+/** Parse a data file (JSON, or YAML via the optional `yaml` package). */
+async function parseData(file: string, abs: string, ext: string): Promise<unknown> {
+  let text: string
+  try {
+    text = await readFile(abs, 'utf8')
+  } catch (e) {
+    throw new Error(`could not read ${file}: ${(e as Error).message}`)
+  }
+  if (ext === '.json') {
+    try {
+      return JSON.parse(text)
+    } catch (e) {
+      throw new Error(`could not parse ${file} as JSON: ${(e as Error).message}`)
+    }
+  }
+  let yaml: { parse(s: string): unknown }
+  try {
+    // The specifier is kept in a variable so the optional dependency is resolved at
+    // runtime from the user's project, not required at build time.
+    const moduleName = 'yaml'
+    yaml = (await import(moduleName)) as { parse(s: string): unknown }
+  } catch {
+    throw new Error(`reading ${file} needs the optional "yaml" package - run: npm i -D yaml (or convert the spec to .json)`)
+  }
+  try {
+    return yaml.parse(text)
+  } catch (e) {
+    throw new Error(`could not parse ${file} as YAML: ${(e as Error).message}`)
+  }
+}
+
+/** Load a source file and return all fixtures it produces (unfiltered). */
+async function load(file: string, cwd: string, exportName: string | undefined): Promise<Loaded> {
   const abs = resolve(cwd, file)
   const ext = extname(abs).toLowerCase()
 
-  if (ext === '.json') {
-    let json: unknown
-    try {
-      json = JSON.parse(await readFile(abs, 'utf8'))
-    } catch (e) {
-      throw new Error(`could not read JSON Schema ${file}: ${(e as Error).message}`)
+  if (DATA_EXTS.has(ext)) {
+    const data = await parseData(file, abs, ext)
+    if (isOpenApiDocument(data)) return { kind: 'openapi', groups: fromOpenApi(data) }
+    if (data === null || typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error(`${file} is not a JSON Schema object or an OpenAPI document`)
     }
-    if (json === null || typeof json !== 'object' || Array.isArray(json)) {
-      throw new Error(`${file} is not a JSON Schema object`)
-    }
-    return fromJsonSchema(json)
+    return { kind: 'flat', fixtures: fromJsonSchema(data) }
   }
 
   let mod: Record<string, unknown>
@@ -130,7 +165,7 @@ async function generate(file: string, cwd: string, exportName: string | undefine
   if (schema === undefined) {
     throw new Error(`no schema export found in ${file} (default-export a Zod schema, or pass --export <name>)`)
   }
-  return adversary(schema as Parameters<typeof adversary>[0])
+  return { kind: 'flat', fixtures: adversary(schema as Parameters<typeof adversary>[0]) }
 }
 
 /**
@@ -194,8 +229,8 @@ export async function run(argv: string[], io: Partial<CliIO> = {}): Promise<numb
   }
 
   const ext = extname(resolve(cwd, file)).toLowerCase()
-  if (ext === '.json' && values.export !== undefined) {
-    err('adversary: --export selects a named module export and does not apply to a .json schema file\n')
+  if (DATA_EXTS.has(ext) && values.export !== undefined) {
+    err('adversary: --export selects a named module export and does not apply to a JSON or OpenAPI file\n')
     return 2
   }
 
@@ -217,31 +252,45 @@ export async function run(argv: string[], io: Partial<CliIO> = {}): Promise<numb
     return 2
   }
 
-  let all: Fixture[]
+  let loaded: Loaded
   try {
-    all = await generate(file, cwd, values.export)
+    loaded = await load(file, cwd, values.export)
   } catch (e) {
     err(`adversary: ${(e as Error).message}\n`)
     return 1
   }
 
-  // Validate requested fields against the schema's actual fields (before filtering,
-  // so a technique filter that legitimately empties a field is not mistaken for a typo).
+  const techniqueSet = techniques.length > 0 ? new Set(techniques) : null
+  const fieldSet = fields.length > 0 ? new Set(fields) : null
+  const keep = (f: Fixture): boolean =>
+    (techniqueSet === null || techniqueSet.has(f.technique)) && (fieldSet === null || fieldSet.has(f.field))
+
+  // Validate requested field names against the actual fields (the union across
+  // operations for OpenAPI), before filtering, so a technique filter that legitimately
+  // empties a field is not mistaken for a typo.
   if (fields.length > 0) {
-    const available = [...new Set(all.map((f) => f.field))]
-    const unknown = fields.filter((f) => !available.includes(f))
-    if (unknown.length > 0) {
-      err(`adversary: unknown field ${unknown.map((f) => `"${f}"`).join(', ')} (available: ${available.join(', ')})\n`)
+    const everyFixture = loaded.kind === 'flat' ? loaded.fixtures : loaded.groups.flatMap((g) => g.fixtures)
+    const available = [...new Set(everyFixture.map((f) => f.field))]
+    const missing = fields.filter((f) => !available.includes(f))
+    if (missing.length > 0) {
+      err(`adversary: unknown field ${missing.map((f) => `"${f}"`).join(', ')} (available: ${available.join(', ')})\n`)
       return 2
     }
   }
 
-  const techniqueSet = techniques.length > 0 ? new Set(techniques) : null
-  const fieldSet = fields.length > 0 ? new Set(fields) : null
-  const fixtures = all.filter(
-    (f) => (techniqueSet === null || techniqueSet.has(f.technique)) && (fieldSet === null || fieldSet.has(f.field)),
-  )
+  if (loaded.kind === 'openapi') {
+    const groups = loaded.groups
+      .map((g) => ({ ...g, fixtures: g.fixtures.filter(keep) }))
+      .filter((g) => g.fixtures.length > 0)
+    if (values.report) {
+      out(groups.map((g) => toMarkdown(g.fixtures, { title: `${g.method} ${g.path} (${g.source})` })).join('\n'))
+    } else {
+      out(`${JSON.stringify(groups, jsonReplacer, 2)}\n`)
+    }
+    return 0
+  }
 
+  const fixtures = loaded.fixtures.filter(keep)
   if (values.report) {
     out(toMarkdown(fixtures, values.title !== undefined ? { title: values.title } : {}))
   } else {

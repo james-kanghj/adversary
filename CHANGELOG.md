@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow semantic versioning.
 
+## [Unreleased]
+
+### Added
+
+- OpenAPI-first entry point, so a QA engineer with an API spec but no Zod schema can start from the
+  spec. `fromOpenApi(doc, options?)` reduces an OpenAPI 3.x document to fixtures grouped per
+  operation (`{ method, path, source: 'body' | 'params', fixtures }`), resolving internal `$ref`s
+  and honoring OpenAPI 3.0 `nullable`. `isOpenApiDocument(x)` and the `OpenApiFixtures` type are
+  exported alongside it.
+- The CLI accepts an OpenAPI document as `<source>` (`.json`, or `.yaml`/`.yml` with the optional
+  `yaml` package). `--report` emits one Markdown section per operation; JSON output is the grouped
+  structure. `yaml` is declared as an optional peer dependency.
+
 ## [1.0.0] - 2026-07-31
 
 First stable release. The public API - `adversary`, `fromJsonSchema`, `toMarkdown`, `catalog`,
