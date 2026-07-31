@@ -140,6 +140,10 @@ npx adversary ./openapi.yaml --report                    # every operation
 npx adversary ./openapi.yaml --technique injection       # JSON, injection only
 ```
 
+<div align="center">
+<img src="https://raw.githubusercontent.com/james-kanghj/adversary/main/examples/openapi-demo.gif" alt="adversary CLI: an OpenAPI spec turned into explained adversarial inputs per operation" width="820">
+</div>
+
 ```
 # POST /webhooks (body)
 ...
