@@ -1,6 +1,6 @@
 {
   "name": "adversary",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Generate explained adversarial test inputs - boundary values, i18n/Unicode edge cases, and injection strings - from a schema. Every case says which technique produced it and why it might break your code.",
   "type": "module",
   "main": "./dist/index.cjs",
