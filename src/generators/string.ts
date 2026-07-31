@@ -42,11 +42,18 @@ export function stringFixtures(field: FieldSpec): Fixture[] {
   if (minLength !== undefined) {
     pushLenBVA(minLength - 1, 'below-min-length', `One character short of minLength (${minLength}). Should be rejected.`)
     pushLenBVA(minLength, 'at-min-length', `Exactly minLength (${minLength}). The lower boundary; should be accepted.`)
-    pushLenBVA(minLength + 1, 'above-min-length', `Just inside minLength (${minLength}). Should be accepted.`)
+    // Skip the just-inside probe when the range is too narrow (e.g. a fixed length)
+    // for minLength+1 to actually be within maxLength; that also frees the value so
+    // the correct above-max-length fixture is not deduped away.
+    if (maxLength === undefined || minLength + 1 <= maxLength) {
+      pushLenBVA(minLength + 1, 'above-min-length', `Just inside minLength (${minLength}). Should be accepted.`)
+    }
   }
 
   if (maxLength !== undefined) {
-    pushLenBVA(maxLength - 1, 'below-max-length', `Just inside maxLength (${maxLength}). Should be accepted.`)
+    if (maxLength - 1 >= (minLength ?? 0)) {
+      pushLenBVA(maxLength - 1, 'below-max-length', `Just inside maxLength (${maxLength}). Should be accepted.`)
+    }
     pushLenBVA(maxLength, 'at-max-length', `Exactly maxLength (${maxLength}). The upper boundary; should be accepted.`)
     pushLenBVA(maxLength + 1, 'above-max-length', `One character over maxLength (${maxLength}). Should be rejected.`)
   } else {

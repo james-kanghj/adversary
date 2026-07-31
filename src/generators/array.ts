@@ -51,6 +51,18 @@ export function arrayFixtures(field: FieldSpec, childFixtures: (f: FieldSpec) =>
 
   const fill = (len: number): unknown[] => Array.from({ length: len }, (_, i) => benignElement(items, i))
 
+  // The benign filler satisfies plain scalar and enum element types, but it cannot
+  // guarantee a value that meets an element format/pattern (e.g. array-of-email) or an
+  // element that is itself a union/array/unknown. In those cases a legal-length array is
+  // only 'unknown', not 'valid', because its elements may still fail the element check.
+  const fillerCertain =
+    items.type === 'number' ||
+    items.type === 'integer' ||
+    items.type === 'boolean' ||
+    items.type === 'enum' ||
+    (items.type === 'string' && items.format === undefined && items.pattern === undefined)
+  const legalLengthValidity: Validity = fillerCertain ? 'valid' : 'unknown'
+
   const push = (value: unknown, technique: Technique, family: string, note: string, valid: Validity): void => {
     out.push({ field: field.name, value, technique, family, failureHypothesis: note, valid })
   }
@@ -80,7 +92,7 @@ export function arrayFixtures(field: FieldSpec, childFixtures: (f: FieldSpec) =>
         'BVA',
         'at-min-items',
         `Exactly minItems (${minItems}), the lower boundary. Probes an off-by-one guard that wrongly rejects the smallest legal collection.`,
-        'valid',
+        legalLengthValidity,
       )
     }
   }
@@ -92,7 +104,7 @@ export function arrayFixtures(field: FieldSpec, childFixtures: (f: FieldSpec) =>
         'BVA',
         'at-max-items',
         `Exactly maxItems (${maxItems}), the upper boundary. Probes an off-by-one guard that wrongly rejects the largest legal collection, and batch or pagination code sized to exactly the limit.`,
-        'valid',
+        legalLengthValidity,
       )
     }
     push(

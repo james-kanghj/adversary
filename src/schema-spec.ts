@@ -36,6 +36,9 @@ export interface FieldSpec {
   // -- number / integer ----------------------------------------------------
   minimum?: number
   maximum?: number
+  /** When true, the matching bound is exclusive: the boundary value itself is invalid. */
+  exclusiveMinimum?: boolean
+  exclusiveMaximum?: boolean
 
   // -- enum / literal ------------------------------------------------------
   /** Allowed values when `type` is `enum`. A literal (`const`) is a one-member enum. */
@@ -78,6 +81,7 @@ type JsonSchema = {
   enum?: unknown[]
   const?: unknown
   items?: JsonSchema
+  prefixItems?: JsonSchema[]
   minItems?: number
   maxItems?: number
   uniqueItems?: boolean
@@ -155,15 +159,24 @@ function applyStringBounds(spec: FieldSpec, raw: JsonSchema): void {
 }
 
 function applyNumberBounds(spec: FieldSpec, raw: JsonSchema): void {
-  // Prefer inclusive bounds; fold JSON Schema draft-7 exclusive bounds into inclusive
-  // integer-adjacent values so BVA has a concrete number to sit on.
+  // For integers an exclusive bound folds to the next inclusive integer (> 10 is >= 11).
+  // For floats there is no next value, so keep the boundary and mark it exclusive so the
+  // generator knows the boundary value itself must be rejected.
   if (typeof raw.minimum === 'number') spec.minimum = raw.minimum
   else if (typeof raw.exclusiveMinimum === 'number') {
-    spec.minimum = spec.type === 'integer' ? raw.exclusiveMinimum + 1 : raw.exclusiveMinimum
+    if (spec.type === 'integer') spec.minimum = raw.exclusiveMinimum + 1
+    else {
+      spec.minimum = raw.exclusiveMinimum
+      spec.exclusiveMinimum = true
+    }
   }
   if (typeof raw.maximum === 'number') spec.maximum = raw.maximum
   else if (typeof raw.exclusiveMaximum === 'number') {
-    spec.maximum = spec.type === 'integer' ? raw.exclusiveMaximum - 1 : raw.exclusiveMaximum
+    if (spec.type === 'integer') spec.maximum = raw.exclusiveMaximum - 1
+    else {
+      spec.maximum = raw.exclusiveMaximum
+      spec.exclusiveMaximum = true
+    }
   }
 }
 
@@ -231,9 +244,15 @@ function toFieldSpec(name: string, raw: JsonSchema, required: boolean): FieldSpe
   if (primary === 'array') {
     const spec: FieldSpec = { name, type: 'array', required }
     if (nullable) spec.nullable = true
-    spec.items = toFieldSpec('', raw.items ?? {}, true)
+    // A tuple is an array with prefixItems and a fixed arity. Derive the length
+    // bounds from the arity (so it is not mistaken for an unbounded array) and
+    // the element type from the first slot.
+    const prefix = Array.isArray(raw.prefixItems) ? raw.prefixItems : undefined
+    spec.items = toFieldSpec('', raw.items ?? prefix?.[0] ?? {}, true)
     if (typeof raw.minItems === 'number') spec.minItems = raw.minItems
+    else if (prefix) spec.minItems = prefix.length
     if (typeof raw.maxItems === 'number') spec.maxItems = raw.maxItems
+    else if (prefix) spec.maxItems = prefix.length
     if (typeof raw.uniqueItems === 'boolean') spec.uniqueItems = raw.uniqueItems
     return spec
   }

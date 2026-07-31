@@ -11,8 +11,8 @@ export function numberFixtures(field: FieldSpec): Fixture[] {
   const rangeValidity = (n: number): Validity => {
     if (Number.isNaN(n) || !Number.isFinite(n)) return 'unknown'
     if (isInt && !Number.isInteger(n)) return 'invalid'
-    if (minimum !== undefined && n < minimum) return 'invalid'
-    if (maximum !== undefined && n > maximum) return 'invalid'
+    if (minimum !== undefined && (field.exclusiveMinimum ? n <= minimum : n < minimum)) return 'invalid'
+    if (maximum !== undefined && (field.exclusiveMaximum ? n >= maximum : n > maximum)) return 'invalid'
     return 'valid'
   }
 
@@ -38,13 +38,32 @@ export function numberFixtures(field: FieldSpec): Fixture[] {
 
   if (minimum !== undefined) {
     push(minimum - 1, 'BVA', 'below-min', `Just below minimum (${minimum}). Should be rejected.`)
-    push(minimum, 'BVA', 'at-min', `Exactly minimum (${minimum}). The lower boundary; should be accepted.`)
-    push(minimum + 1, 'BVA', 'above-min', `Just inside minimum (${minimum}). Should be accepted.`)
+    push(
+      minimum,
+      'BVA',
+      'at-min',
+      field.exclusiveMinimum
+        ? `Exactly the exclusive minimum (${minimum}); the boundary is excluded, so this should be rejected.`
+        : `Exactly minimum (${minimum}). The lower boundary; should be accepted.`,
+    )
+    // Skip the just-inside probe when the range is too narrow for it to actually be inside.
+    if (maximum === undefined || minimum + 1 <= maximum) {
+      push(minimum + 1, 'BVA', 'above-min', `Just inside minimum (${minimum}). Should be accepted.`)
+    }
   }
 
   if (maximum !== undefined) {
-    push(maximum - 1, 'BVA', 'below-max', `Just inside maximum (${maximum}). Should be accepted.`)
-    push(maximum, 'BVA', 'at-max', `Exactly maximum (${maximum}). The upper boundary; should be accepted.`)
+    if (minimum === undefined || maximum - 1 >= minimum) {
+      push(maximum - 1, 'BVA', 'below-max', `Just inside maximum (${maximum}). Should be accepted.`)
+    }
+    push(
+      maximum,
+      'BVA',
+      'at-max',
+      field.exclusiveMaximum
+        ? `Exactly the exclusive maximum (${maximum}); the boundary is excluded, so this should be rejected.`
+        : `Exactly maximum (${maximum}). The upper boundary; should be accepted.`,
+    )
     push(maximum + 1, 'BVA', 'above-max', `Just above maximum (${maximum}). Should be rejected.`)
   }
 
