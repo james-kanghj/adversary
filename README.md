@@ -48,7 +48,17 @@ Testing input handling means throwing hostile values at it. Today you either:
 npm i -D adversary
 ```
 
-Zod is an optional peer dependency. `adversary()` accepts any schema that exposes a `toJSONSchema()` method (Zod v4 does). For a plain JSON Schema object, use `fromJsonSchema()` and skip Zod entirely.
+Zod is an optional peer dependency. `adversary()` accepts any schema that exposes a `toJSONSchema()` method (Zod v4 does). For a plain JSON Schema object, use `fromJsonSchema()` and skip Zod entirely:
+
+```ts
+import { fromJsonSchema } from 'adversary'
+
+const fixtures = fromJsonSchema({
+  type: 'object',
+  properties: { email: { type: 'string', format: 'email' } },
+  required: ['email'],
+})
+```
 
 ## Use it in tests (shift-left)
 
@@ -58,6 +68,8 @@ The natural home for the fixtures is a `test.each` table, so the hostile inputs 
 import { describe, it, expect } from 'vitest'
 import { adversary } from 'adversary'
 import { Signup } from '../src/schema'
+
+const validBase = { username: 'alice', age: 30 } // a value your schema accepts
 
 describe.each(adversary(Signup))('$field / $family', ({ field, value }) => {
   it('is handled, not crashed', () => {
@@ -140,7 +152,7 @@ interface Fixture {
 - **date / date-time** (`z.iso.date()` / `z.iso.datetime()`) - Feb 29 of a non-leap year, out-of-range components, year 0000 and 9999, a DST spring-forward gap, a leap second, the Y2038 overflow, a numeric timezone offset, and a SQL space-separated timestamp.
 - **union** - scalar seams (a value matching no branch, a numeric string caught between a string and a number branch, a NaN branch-shift) and, for a discriminated union, an unknown or absent discriminant.
 
-Every field also gets `null` and `absent` (undefined) probes whose validity tracks the field's `nullable` and `required` flags. Nested objects are read at the top level only for now; deeper nesting is on the roadmap.
+Every field also gets `null` and `absent` (undefined) probes whose validity tracks the field's `nullable` and `required` flags. Composite fields are read at the top level only for now - a nested object, a `z.record`, or a `z.intersection` reduces to the presence probes rather than being descended into; deeper nesting is on the roadmap.
 
 ### Format-aware packs
 
@@ -163,9 +175,21 @@ adversary(schema, { techniques: ['injection'] }) // only injection cases
 adversary(schema, { fields: ['username'] })       // only this field
 ```
 
+## API
+
+The public surface (stable under semver from `1.0`):
+
+- **`adversary(schema, options?)`** - fixtures from a Zod v4 schema (anything with `toJSONSchema()`). Throws a `TypeError` if the argument is not schema-like.
+- **`fromJsonSchema(json, options?)`** - fixtures from a plain JSON Schema object. Throws a `TypeError` if the argument is not an object.
+- **`toMarkdown(fixtures, { title? })`** - a risk-ranked Markdown report (injection first), with non-ASCII escaped to `\uXXXX`.
+- **`catalog`** - the general curated hostile-input catalog (`readonly CatalogEntry[]`), injected into every string field.
+- **`packs`** - the format-aware packs, `Readonly<Record<format, readonly CatalogEntry[]>>` keyed by JSON Schema `format` (`email`, `uri`, `uuid`, `hostname`, `ipv4`, `ipv6`, `base64`).
+
+`options` is `{ techniques?: Technique[]; fields?: string[] }`. Exported types: `Fixture`, `Technique`, `Validity`, `CatalogEntry`, `SchemaLike`, `AdversaryOptions`, `MarkdownOptions`. To list a schema's field names: `[...new Set(fixtures.map((f) => f.field))]`.
+
 ## Status
 
-Early (`0.1`), moving fast. Type coverage spans string, number/integer, boolean, enum/literal, array, date/date-time, and union today (see [Type coverage](#type-coverage)). The direction: a growing community-curated Unicode catalog, deeper object nesting, and framework-specific fixture emitters. The Unicode catalog is designed to accumulate - when you find a hostile input that breaks something real, it belongs here.
+Mature and actively developed, approaching a stable `1.0`. Type coverage spans string, number/integer, boolean, enum/literal, array, date/date-time, and union (see [Type coverage](#type-coverage)), with format-aware packs for email, url, uuid, hostname, ipv4, ipv6, and base64. The public API - `adversary`, `fromJsonSchema`, `toMarkdown`, `catalog`, `packs`, and the `Fixture` type - is settled; at `1.0` it is frozen under semver. Planned next: deeper object nesting, more format packs, and framework-specific fixture emitters. The curated catalog is designed to accumulate - when you find a hostile input that breaks something real, it belongs here.
 
 It can only **name the failure class to watch for**; it never guarantees a bug exists. Treat each case as a hypothesis to check, not a verdict.
 
