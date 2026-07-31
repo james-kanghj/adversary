@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow semantic versioning.
 
-## [Unreleased]
+## [0.5.0] - 2026-07-31
 
 ### Added
 
@@ -107,6 +107,7 @@ API and exported types are unchanged.
 - `toMarkdown()` risk-ranked report with non-ASCII escaping.
 - A curated, explained catalog of hostile Unicode and injection strings.
 
+[0.5.0]: https://github.com/james-kanghj/adversary/releases/tag/v0.5.0
 [0.4.0]: https://github.com/james-kanghj/adversary/releases/tag/v0.4.0
 [0.3.0]: https://github.com/james-kanghj/adversary/releases/tag/v0.3.0
 [0.2.0]: https://github.com/james-kanghj/adversary/releases/tag/v0.2.0
