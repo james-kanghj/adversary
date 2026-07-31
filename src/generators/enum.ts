@@ -56,7 +56,7 @@ export function enumFixtures(field: FieldSpec): Fixture[] {
       technique,
       family,
       failureHypothesis: note,
-      valid: isMember(value) ? 'valid' : 'invalid',
+      validity: isMember(value) ? 'valid' : 'invalid',
     })
   }
 

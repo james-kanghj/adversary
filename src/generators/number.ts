@@ -32,7 +32,7 @@ export function numberFixtures(field: FieldSpec): Fixture[] {
       technique,
       family,
       failureHypothesis: note,
-      valid: valid ?? rangeValidity(value),
+      validity: valid ?? rangeValidity(value),
     })
   }
 

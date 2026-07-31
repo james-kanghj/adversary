@@ -26,7 +26,7 @@ export function stringFixtures(field: FieldSpec): Fixture[] {
       technique: 'BVA',
       family,
       failureHypothesis: note,
-      valid: lengthValidity(len, field),
+      validity: lengthValidity(len, field),
     })
   }
 
@@ -66,7 +66,7 @@ export function stringFixtures(field: FieldSpec): Fixture[] {
         technique: 'BVA',
         family: 'unbounded-length',
         failureHypothesis: `No maxLength is declared. A ${UNBOUNDED_PROBE_LENGTH}-character value probes silent truncation at the storage layer (DB column width) and O(n^2) handling that turns into a denial of service.`,
-        valid: 'unknown',
+        validity: 'unknown',
       })
     }
   }
@@ -83,7 +83,7 @@ export function stringFixtures(field: FieldSpec): Fixture[] {
       technique: entry.technique,
       family: entry.family,
       failureHypothesis: entry.failureHypothesis,
-      valid: 'unknown',
+      validity: 'unknown',
     })
   }
 

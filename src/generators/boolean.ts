@@ -55,7 +55,7 @@ export function booleanFixtures(field: FieldSpec): Fixture[] {
     technique: 'EP' as const,
     family: c.family,
     failureHypothesis: c.note,
-    valid: 'invalid' as const,
+    validity: 'invalid' as const,
   }))
 
   out.push({
@@ -65,7 +65,7 @@ export function booleanFixtures(field: FieldSpec): Fixture[] {
     family: 'valid-false',
     failureHypothesis:
       'false is a fully valid value, yet it is falsy: an if(value) gate, a value || defaultTrue fallback, or an if(!body.flag) required check treats a deliberately-supplied false exactly like missing or unset. This is the one valid value most likely to be silently dropped.',
-    valid: 'valid',
+    validity: 'valid',
   })
 
   return out

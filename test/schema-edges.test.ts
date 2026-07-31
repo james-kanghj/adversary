@@ -10,12 +10,12 @@ describe('exclusive numeric bounds', () => {
     const fx = forField(z.object({ x: schema }))
     const atMin = fx.find((f) => f.family === 'at-min')!
     expect(atMin.value).toBe(0)
-    expect(atMin.valid).toBe('invalid')
+    expect(atMin.validity).toBe('invalid')
     // the collateral EP zero fixtures are corrected too
-    expect(fx.find((f) => f.family === 'zero')?.valid).toBe('invalid')
+    expect(fx.find((f) => f.family === 'zero')?.validity).toBe('invalid')
     // invariant: every fixture labelled valid actually passes the schema
     for (const f of fx) {
-      if (f.valid === 'valid') expect(schema.safeParse(f.value).success, String(f.value)).toBe(true)
+      if (f.validity === 'valid') expect(schema.safeParse(f.value).success, String(f.value)).toBe(true)
     }
   })
 
@@ -23,7 +23,7 @@ describe('exclusive numeric bounds', () => {
     const fx = forField(z.object({ x: z.number().int().gt(10) }))
     const atMin = fx.find((f) => f.family === 'at-min')!
     expect(atMin.value).toBe(11)
-    expect(atMin.valid).toBe('valid')
+    expect(atMin.validity).toBe('valid')
   })
 })
 
@@ -34,7 +34,7 @@ describe('narrow and fixed-length ranges', () => {
     expect(fx.some((f) => f.family === 'above-max-length')).toBe(true)
     expect(fx.some((f) => f.family === 'above-min-length')).toBe(false)
     for (const f of fx) {
-      if (f.valid === 'valid') expect(schema.safeParse(f.value).success, JSON.stringify(f.value)).toBe(true)
+      if (f.validity === 'valid') expect(schema.safeParse(f.value).success, JSON.stringify(f.value)).toBe(true)
     }
   })
 
@@ -44,7 +44,7 @@ describe('narrow and fixed-length ranges', () => {
     expect(fx.some((f) => f.family === 'above-min')).toBe(false)
     expect(fx.some((f) => f.family === 'below-max')).toBe(false)
     for (const f of fx) {
-      if (f.valid === 'valid') expect(schema.safeParse(f.value).success, String(f.value)).toBe(true)
+      if (f.validity === 'valid') expect(schema.safeParse(f.value).success, String(f.value)).toBe(true)
     }
   })
 })
@@ -52,10 +52,10 @@ describe('narrow and fixed-length ranges', () => {
 describe('array element validity', () => {
   it('length fixtures are unknown when the element has a format the filler cannot satisfy', () => {
     const emailArr = adversary(z.object({ a: z.array(z.email()).min(1) })).filter((f) => f.field === 'a')
-    expect(emailArr.find((f) => f.family === 'at-min-items')?.valid).toBe('unknown')
+    expect(emailArr.find((f) => f.family === 'at-min-items')?.validity).toBe('unknown')
 
     const plainArr = adversary(z.object({ a: z.array(z.string()).min(1) })).filter((f) => f.field === 'a')
-    expect(plainArr.find((f) => f.family === 'at-min-items')?.valid).toBe('valid')
+    expect(plainArr.find((f) => f.family === 'at-min-items')?.validity).toBe('valid')
   })
 })
 
@@ -63,7 +63,7 @@ describe('tuple (prefixItems)', () => {
   it('gets fixed-length bounds and no spurious unbounded-length probe', () => {
     const fx = fromJsonSchema({ type: 'array', prefixItems: [{ type: 'string' }, { type: 'number' }] })
     expect(fx.some((f) => f.family === 'unbounded-length')).toBe(false)
-    expect(fx.find((f) => f.family === 'empty')?.valid).toBe('invalid') // an empty array is the wrong arity
+    expect(fx.find((f) => f.family === 'empty')?.validity).toBe('invalid') // an empty array is the wrong arity
     expect(fx.some((f) => f.family === 'at-max-items')).toBe(true)
     expect(fx.some((f) => f.family === 'above-max-items')).toBe(true)
   })

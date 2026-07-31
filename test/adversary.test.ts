@@ -37,11 +37,11 @@ describe('adversary(zodSchema)', () => {
     const belowMin = uname.find((f) => f.family === 'below-min-length')!
     const aboveMax = uname.find((f) => f.family === 'above-max-length')!
     expect((atMin.value as string).length).toBe(3)
-    expect(atMin.valid).toBe('valid')
+    expect(atMin.validity).toBe('valid')
     expect((belowMin.value as string).length).toBe(2)
-    expect(belowMin.valid).toBe('invalid')
+    expect(belowMin.validity).toBe('invalid')
     expect((aboveMax.value as string).length).toBe(21)
-    expect(aboveMax.valid).toBe('invalid')
+    expect(aboveMax.validity).toBe('invalid')
   })
 
   it('injects the hostile catalog into string fields', () => {
@@ -56,13 +56,13 @@ describe('adversary(zodSchema)', () => {
     const atMin = age.find((f) => f.family === 'at-min')!
     const belowMin = age.find((f) => f.family === 'below-min')!
     expect(atMin.value).toBe(18)
-    expect(atMin.valid).toBe('valid')
+    expect(atMin.validity).toBe('valid')
     expect(belowMin.value).toBe(17)
-    expect(belowMin.valid).toBe('invalid')
+    expect(belowMin.validity).toBe('invalid')
 
     const nonInt = age.find((f) => f.family === 'non-integer')!
     expect(Number.isInteger(nonInt.value as number)).toBe(false)
-    expect(nonInt.valid).toBe('invalid')
+    expect(nonInt.validity).toBe('invalid')
 
     expect(age.some((f) => f.family === 'nan')).toBe(true)
     expect(age.some((f) => f.family === 'unsafe-integer')).toBe(true)

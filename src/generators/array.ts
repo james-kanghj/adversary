@@ -63,8 +63,8 @@ export function arrayFixtures(field: FieldSpec, childFixtures: (f: FieldSpec) =>
     (items.type === 'string' && items.format === undefined && items.pattern === undefined)
   const legalLengthValidity: Validity = fillerCertain ? 'valid' : 'unknown'
 
-  const push = (value: unknown, technique: Technique, family: string, note: string, valid: Validity): void => {
-    out.push({ field: field.name, value, technique, family, failureHypothesis: note, valid })
+  const push = (value: unknown, technique: Technique, family: string, note: string, validity: Validity): void => {
+    out.push({ field: field.name, value, technique, family, failureHypothesis: note, validity })
   }
 
   // -- Length (BVA) --------------------------------------------------------
@@ -128,7 +128,7 @@ export function arrayFixtures(field: FieldSpec, childFixtures: (f: FieldSpec) =>
   if (maxItems !== 0) {
     const len = Math.min(Math.max(minItems ?? 1, 1), maxItems ?? Infinity)
     for (const child of childFixtures(items)) {
-      if (child.valid === 'valid') continue // a valid element in a legal array is not adversarial
+      if (child.validity === 'valid') continue // a valid element in a legal array is not adversarial
       const arr = fill(len)
       arr[0] = child.value
       push(
@@ -136,7 +136,7 @@ export function arrayFixtures(field: FieldSpec, childFixtures: (f: FieldSpec) =>
         child.technique,
         `element-${child.family}`,
         `Legal array length, but one element carries an element-level hazard: ${child.failureHypothesis} Probes validators that check the collection's shape and length yet never validate each element.`,
-        child.valid,
+        child.validity,
       )
     }
   }

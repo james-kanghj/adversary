@@ -50,9 +50,9 @@ describe('date validity claims agree with Zod', () => {
   ] as const) {
     it(`${label}: valid/invalid claims match safeParse`, () => {
       for (const f of forField(z.object({ d: schema }))) {
-        if (f.valid === 'unknown' || f.family === 'null' || f.family === 'absent') continue
+        if (f.validity === 'unknown' || f.family === 'null' || f.family === 'absent') continue
         const accepted = schema.safeParse(f.value).success
-        expect(accepted, `${f.family} ${JSON.stringify(f.value)}`).toBe(f.valid === 'valid')
+        expect(accepted, `${f.family} ${JSON.stringify(f.value)}`).toBe(f.validity === 'valid')
       }
     })
   }

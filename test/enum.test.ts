@@ -25,7 +25,7 @@ describe('enum fixtures (string enum)', () => {
 
   it('validity is exactly set membership (the field constraint)', () => {
     for (const f of fx) {
-      expect(f.valid, `${f.family} ${String(f.value)}`).toBe(members.includes(f.value as string) ? 'valid' : 'invalid')
+      expect(f.validity, `${f.family} ${String(f.value)}`).toBe(members.includes(f.value as string) ? 'valid' : 'invalid')
     }
   })
 
@@ -71,13 +71,13 @@ describe('enum fixtures (string literal)', () => {
   it('supplies the exact literal as a valid control', () => {
     const exact = fam('exact-const')!
     expect(exact.value).toBe('PENDING')
-    expect(exact.valid).toBe('valid')
+    expect(exact.validity).toBe('valid')
   })
 
   it('the case-variant near-miss is rejected', () => {
     const cased = fam('case-variant-member')!
     expect(cased.value).toBe('pending')
-    expect(cased.valid).toBe('invalid')
+    expect(cased.validity).toBe('invalid')
   })
 })
 
@@ -87,7 +87,7 @@ describe('enum fixtures (numeric enum)', () => {
 
   it('the valid control is a member number', () => {
     expect(fam('valid-member')!.value).toBe(1)
-    expect(fam('valid-member')!.valid).toBe('valid')
+    expect(fam('valid-member')!.validity).toBe('valid')
   })
 
   it('claims are true: the stringified member is loosely equal but not strictly equal', () => {
@@ -96,7 +96,7 @@ describe('enum fixtures (numeric enum)', () => {
     // eslint-disable-next-line eqeqeq
     expect(s == 1).toBe(true)
     expect(s === 1).toBe(false)
-    expect(fam('stringified-member')!.valid).toBe('invalid')
+    expect(fam('stringified-member')!.validity).toBe('invalid')
   })
 
   it('claims are true: the in-range non-member sits between members but is absent from the set', () => {
@@ -104,12 +104,12 @@ describe('enum fixtures (numeric enum)', () => {
     expect(g).toBeGreaterThan(1)
     expect(g).toBeLessThan(3)
     expect([1, 2, 3].includes(g)).toBe(false)
-    expect(fam('in-range-non-member')!.valid).toBe('invalid')
+    expect(fam('in-range-non-member')!.validity).toBe('invalid')
   })
 
   it('emits an out-of-range value past the largest member', () => {
     expect(fam('out-of-range')!.value).toBe(4)
-    expect(fam('out-of-range')!.valid).toBe('invalid')
+    expect(fam('out-of-range')!.validity).toBe('invalid')
   })
 })
 
@@ -119,12 +119,12 @@ describe('enum fixtures (numeric literal)', () => {
 
   it('claims are true: the numeric literal only accepts the number, and == vs === diverge', () => {
     expect(fam('exact-const')!.value).toBe(42)
-    expect(fam('exact-const')!.valid).toBe('valid')
+    expect(fam('exact-const')!.validity).toBe('valid')
     const s = fam('stringified-member')!.value
     expect(s).toBe('42')
     // eslint-disable-next-line eqeqeq
     expect(s == 42).toBe(true)
     expect(s === 42).toBe(false)
-    expect(fam('stringified-member')!.valid).toBe('invalid')
+    expect(fam('stringified-member')!.validity).toBe('invalid')
   })
 })

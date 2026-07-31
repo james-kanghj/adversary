@@ -29,7 +29,7 @@ export interface Fixture {
   /** Plain-language reason this value might break the code. Never empty. */
   failureHypothesis: string
   /** Whether the value satisfies the field's own constraints, where determinable. */
-  valid: Validity
+  validity: Validity
 }
 
 /**

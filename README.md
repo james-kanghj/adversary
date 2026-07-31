@@ -24,9 +24,9 @@ const Signup = z.object({
 adversary(Signup)
 // [
 //   { field: 'username', value: 'aa', technique: 'BVA', family: 'below-min-length',
-//     failureHypothesis: 'One character short of minLength (3). Should be rejected.', valid: 'invalid' },
+//     failureHypothesis: 'One character short of minLength (3). Should be rejected.', validity: 'invalid' },
 //   { field: 'username', value: '👨‍👩‍👧‍👦', technique: 'i18n', family: 'grapheme-vs-codeunit',
-//     failureHypothesis: 'A single family emoji ... String length is 11 UTF-16 code units ...', valid: 'unknown' },
+//     failureHypothesis: 'A single family emoji ... String length is 11 UTF-16 code units ...', validity: 'unknown' },
 //   { field: 'age', value: 17, technique: 'BVA', family: 'below-min', ... },
 //   ...
 // ]
@@ -80,7 +80,7 @@ describe.each(adversary(Signup))('$field / $family', ({ field, value }) => {
 })
 ```
 
-Runnable versions live in [`examples/`](examples/) and run as part of this repo's own test suite: [`shift-left.test.ts`](examples/shift-left.test.ts) asserts your schema agrees with each value's `valid` label (so a too-loose or too-strict schema fails CI), and [`harden-a-function.test.ts`](examples/harden-a-function.test.ts) drives an HTML escaper with the injection catalog via the `techniques` filter.
+Runnable versions live in [`examples/`](examples/) and run as part of this repo's own test suite: [`shift-left.test.ts`](examples/shift-left.test.ts) asserts your schema agrees with each value's `validity` label (so a too-loose or too-strict schema fails CI), and [`harden-a-function.test.ts`](examples/harden-a-function.test.ts) drives an HTML escaper with the injection catalog via the `techniques` filter.
 
 ## Use it as a report (for a QA charter or a PR)
 
@@ -127,11 +127,11 @@ interface Fixture {
   technique: 'BVA' | 'EP' | 'i18n' | 'injection'
   family: string           // e.g. "grapheme-vs-codeunit", "sql-injection"
   failureHypothesis: string // why this value might break the code
-  valid: 'valid' | 'invalid' | 'unknown' // does it satisfy the field's own constraints?
+  validity: 'valid' | 'invalid' | 'unknown' // does it satisfy the field's own constraints?
 }
 ```
 
-`valid` is deliberately `'unknown'` for the i18n/injection catalog: whether those values are accepted is exactly the behaviour under test, so the tool does not pretend to know.
+`validity` is deliberately `'unknown'` for the i18n/injection catalog: whether those values are accepted is exactly the behaviour under test, so the tool does not pretend to know.
 
 ### Techniques
 

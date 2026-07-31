@@ -85,7 +85,7 @@ export function toMarkdown(fixtures: Fixture[], opts: MarkdownOptions = {}): str
       lines.push(`### ${TECHNIQUE_HEADING[technique]}`)
       lines.push('')
       for (const fx of byTechnique.get(technique) as Fixture[]) {
-        const validity = fx.valid === 'unknown' ? '' : ` _(${fx.valid})_`
+        const validity = fx.validity === 'unknown' ? '' : ` _(${fx.validity})_`
         const len = typeof fx.value === 'string' ? ` (len ${fx.value.length})` : ''
         lines.push(`- **${fx.family}** \`${render(fx.value)}\`${len}${validity}`)
         lines.push(`  ${fx.failureHypothesis}`)

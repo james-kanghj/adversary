@@ -22,7 +22,7 @@ describe('union fixtures (scalar branches)', () => {
 
   it('no-branch-match uses a type absent from every branch', () => {
     expect(fam('no-branch-match').value).toBe(true) // boolean, in neither string nor number
-    expect(fam('no-branch-match').valid).toBe('invalid')
+    expect(fam('no-branch-match').validity).toBe('invalid')
   })
 
   it('claims are true: the confusion value validates as a string yet reads as a number', () => {
@@ -30,7 +30,7 @@ describe('union fixtures (scalar branches)', () => {
     expect(typeof s).toBe('string')
     expect(s + 1).toBe(s + '1') // string concatenation, not addition
     expect((s as unknown) === Number(s)).toBe(false)
-    expect(fam('numeric-string-confusion').valid).toBe('valid')
+    expect(fam('numeric-string-confusion').validity).toBe('valid')
   })
 
   it('claims are true: the i18n branch value reads as a number but Number() is NaN', () => {
@@ -40,7 +40,7 @@ describe('union fixtures (scalar branches)', () => {
   it('claims are true: the NaN branch-shift value is a number whose JSON form is null', () => {
     expect(Number.isNaN(fam('nan-serialization-branch-shift').value as number)).toBe(true)
     expect(JSON.stringify(fam('nan-serialization-branch-shift').value)).toBe('null')
-    expect(fam('nan-serialization-branch-shift').valid).toBe('unknown')
+    expect(fam('nan-serialization-branch-shift').validity).toBe('unknown')
   })
 })
 
@@ -63,7 +63,7 @@ describe('union fixtures (discriminated / oneOf)', () => {
   it('the missing-discriminant object has no tag key', () => {
     const v = fam('missing-discriminant').value as Record<string, unknown>
     expect('type' in v).toBe(false)
-    expect(fam('missing-discriminant').valid).toBe('invalid')
+    expect(fam('missing-discriminant').validity).toBe('invalid')
   })
 })
 
@@ -76,8 +76,8 @@ describe('union validity claims agree with Zod', () => {
   ] as const) {
     it(`${label}: valid/invalid claims match safeParse`, () => {
       for (const f of forField(z.object({ u: schema }))) {
-        if (f.valid === 'unknown' || f.family === 'null' || f.family === 'absent') continue
-        expect(schema.safeParse(f.value).success, `${f.family} ${JSON.stringify(f.value)}`).toBe(f.valid === 'valid')
+        if (f.validity === 'unknown' || f.family === 'null' || f.family === 'absent') continue
+        expect(schema.safeParse(f.value).success, `${f.family} ${JSON.stringify(f.value)}`).toBe(f.validity === 'valid')
       }
     })
   }

@@ -8,7 +8,7 @@
  *      A mismatch means the schema is too loose (accepts an out-of-range value)
  *      or too strict (rejects a boundary value it should allow).
  *
- * The i18n and injection catalog cases are labelled `valid: 'unknown'` on
+ * The i18n and injection catalog cases are labelled `validity: 'unknown'` on
  * purpose - whether your system should accept them is exactly the behaviour
  * under test, so this example leaves that assertion to you.
  *
@@ -26,7 +26,7 @@ const Signup = z.object({
 
 const validBase: z.infer<typeof Signup> = { username: 'alice', age: 30, role: 'member' }
 
-describe.each(adversary(Signup))('$field / $family ($technique)', ({ field, value, valid, failureHypothesis }) => {
+describe.each(adversary(Signup))('$field / $family ($technique)', ({ field, value, validity, failureHypothesis }) => {
   it('is handled without crashing, and the schema agrees where the disposition is known', () => {
     const result = Signup.safeParse({ ...validBase, [field]: value })
 
@@ -34,7 +34,7 @@ describe.each(adversary(Signup))('$field / $family ($technique)', ({ field, valu
     expect(result).toBeDefined()
 
     // 2. assert the schema's disposition matches adversary's own-constraint verdict.
-    if (valid === 'valid') expect(result.success, failureHypothesis).toBe(true)
-    if (valid === 'invalid') expect(result.success, failureHypothesis).toBe(false)
+    if (validity === 'valid') expect(result.success, failureHypothesis).toBe(true)
+    if (validity === 'invalid') expect(result.success, failureHypothesis).toBe(false)
   })
 })

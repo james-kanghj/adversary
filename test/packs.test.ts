@@ -50,7 +50,7 @@ describe('format-aware pack injection', () => {
 
   it('pack fixtures carry validity unknown (acceptance is the behaviour under test)', () => {
     const fx = adversary(z.object({ email: z.email() })).filter((f) => f.family === 'homograph-domain')
-    expect(fx[0]?.valid).toBe('unknown')
+    expect(fx[0]?.validity).toBe('unknown')
   })
 })
 

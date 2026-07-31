@@ -26,8 +26,8 @@ export function unionFixtures(field: FieldSpec): Fixture[] {
   const branches = field.anyOf ?? []
   if (branches.length === 0) return []
 
-  const push = (value: unknown, technique: Technique, family: string, note: string, valid: Validity): void => {
-    out.push({ field: field.name, value, technique, family, failureHypothesis: note, valid })
+  const push = (value: unknown, technique: Technique, family: string, note: string, validity: Validity): void => {
+    out.push({ field: field.name, value, technique, family, failureHypothesis: note, validity })
   }
 
   const normalizedTypes = new Set<string>(branches.map((b) => (b.type === 'integer' ? 'number' : b.type)))
