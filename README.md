@@ -2,7 +2,9 @@
 
 # Adversary
 
-[![npm](https://img.shields.io/npm/v/adversary.svg)](https://www.npmjs.com/package/adversary) [![CI](https://github.com/james-kanghj/adversary/actions/workflows/ci.yml/badge.svg)](https://github.com/james-kanghj/adversary/actions/workflows/ci.yml) [![types](https://img.shields.io/npm/types/adversary.svg)](https://www.npmjs.com/package/adversary) [![license: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE) [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![npm](https://img.shields.io/npm/v/adversary.svg)](https://www.npmjs.com/package/adversary) [![CI](https://github.com/james-kanghj/adversary/actions/workflows/ci.yml/badge.svg)](https://github.com/james-kanghj/adversary/actions/workflows/ci.yml) [![types](https://img.shields.io/npm/types/adversary.svg)](https://www.npmjs.com/package/adversary) [![minzipped size](https://img.shields.io/bundlephobia/minzip/adversary.svg)](https://bundlephobia.com/package/adversary) [![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](https://www.npmjs.com/package/adversary?activeTab=dependencies)
+
+[![license: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE) [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md) [![last commit](https://img.shields.io/github/last-commit/james-kanghj/adversary.svg)](https://github.com/james-kanghj/adversary/commits/main) [![issues](https://img.shields.io/github/issues/james-kanghj/adversary.svg)](https://github.com/james-kanghj/adversary/issues)
 
 Generate **explained** adversarial test inputs from a schema - boundary values, i18n/Unicode edge cases, and injection strings, each labelled with the technique that produced it and a plain-language reason it might fail.
 
