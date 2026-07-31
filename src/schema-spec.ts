@@ -169,6 +169,12 @@ function applyNumberBounds(spec: FieldSpec, raw: JsonSchema): void {
 
 /** Reduce one JSON Schema node to a FieldSpec. Recurses for array items and union branches. */
 function toFieldSpec(name: string, raw: JsonSchema, required: boolean): FieldSpec {
+  // A non-object node (a bare scalar or array reached via a malformed schema) has
+  // no constraints to read and must not hit the `in` / property access below.
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { name, type: 'unknown', required }
+  }
+
   // 1. Union / nullable. anyOf and oneOf are both branch lists; oneOf is exclusive.
   const branchesRaw = raw.anyOf ?? raw.oneOf
   if (Array.isArray(branchesRaw) && branchesRaw.length > 0) {

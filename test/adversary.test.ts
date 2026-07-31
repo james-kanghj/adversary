@@ -98,6 +98,12 @@ describe('fromJsonSchema (no Zod required)', () => {
     expect(fx.length).toBeGreaterThan(0)
     expect(fx.every((f) => f.field === '')).toBe(true)
   })
+
+  it('does not throw on a non-object JSON Schema (scalar, array, or null)', () => {
+    for (const bad of [42, 'nope', [1, 2, 3], null, true] as unknown[]) {
+      expect(() => fromJsonSchema(bad), String(bad)).not.toThrow()
+    }
+  })
 })
 
 describe('adversary() input validation', () => {
