@@ -234,7 +234,7 @@ The public surface (stable under semver from `1.0`):
 
 ## Status
 
-Mature and actively developed, approaching a stable `1.0`. Type coverage spans string, number/integer, boolean, enum/literal, array, date/date-time, and union (see [Type coverage](#type-coverage)), with format-aware packs for email, url, uuid, hostname, ipv4, ipv6, and base64. The public API - `adversary`, `fromJsonSchema`, `toMarkdown`, `catalog`, `packs`, and the `Fixture` type - is settled; at `1.0` it is frozen under semver. Planned next: deeper object nesting, more format packs, and framework-specific fixture emitters. The curated catalog is designed to accumulate - when you find a hostile input that breaks something real, it belongs here.
+Stable and actively developed. Type coverage spans string, number/integer, boolean, enum/literal, array, date/date-time, and union (see [Type coverage](#type-coverage)), with format-aware packs for email, url, uuid, hostname, ipv4, ipv6, and base64, and entry points for Zod, plain JSON Schema, and OpenAPI 3.x. The public API - `adversary`, `fromJsonSchema`, `fromOpenApi`, `toMarkdown`, `catalog`, `packs`, and the `Fixture` type - is frozen under semver from `1.0`. Planned next: deeper object nesting, more format packs, and framework-specific fixture emitters. The curated catalog is designed to accumulate - when you find a hostile input that breaks something real, it belongs here.
 
 It can only **name the failure class to watch for**; it never guarantees a bug exists. Treat each case as a hypothesis to check, not a verdict.
 
