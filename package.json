@@ -13,6 +13,9 @@
       "require": "./dist/index.cjs"
     }
   },
+  "bin": {
+    "adversary": "./dist/bin.js"
+  },
   "files": [
     "dist"
   ],

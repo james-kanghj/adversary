@@ -70,6 +70,30 @@ console.log(toMarkdown(adversary(Signup)))
 
 produces a risk-ranked Markdown report (injection first, boundary/equivalence last) with every value and its failure hypothesis. Non-ASCII is escaped to `\uXXXX` so invisible and bidi characters never corrupt the output.
 
+## CLI
+
+Point the CLI at a schema file for fixtures as JSON, or a Markdown report:
+
+```sh
+npx adversary ./schema.ts                       # JSON fixtures on stdout
+npx adversary ./schema.ts --report              # Markdown risk report
+npx adversary ./schema.ts --technique injection,i18n
+npx adversary ./api.schema.json --field email   # a JSON Schema file, one field
+```
+
+The file may be a `.ts` / `.js` / `.mjs` / `.cjs` module exporting a Zod schema (its default export, or `--export <name>`), or a `.json` file containing a JSON Schema. Loading a `.ts` file uses Node's built-in type stripping (Node 22.18+).
+
+```
+--report          Markdown report instead of JSON fixtures
+--export <name>   which export to use (default: the default, else the first schema-like export)
+--technique <t>   BVA, EP, i18n, injection (repeatable or comma-separated)
+--field <name>    limit to these fields (repeatable or comma-separated)
+--title <text>    title for the Markdown report
+-h, --help    -v, --version
+```
+
+Exit codes: `0` success, `1` a runtime error (bad schema or file), `2` a usage error (bad arguments). In JSON output, values JSON cannot represent are encoded so nothing is silently lost: the `absent` probe becomes `null`, and `NaN` / `Infinity` / `-Infinity` / `-0` become those literal strings (revive them rather than testing `null`/`0`).
+
 ## What you get
 
 Each fixture is:
