@@ -164,6 +164,16 @@ JSON output is grouped `[{ method, path, source: 'body' | 'params', fixtures }]`
 
 Exit codes: `0` success, `1` a runtime error (bad schema or file), `2` a usage error (bad arguments). In JSON output, values JSON cannot represent are encoded so nothing is silently lost: the `absent` probe becomes `null`, and `NaN` / `Infinity` / `-Infinity` / `-0` become those literal strings (revive them rather than testing `null`/`0`).
 
+## On a real project (not just Zod)
+
+Because it runs off any JSON Schema, you can point it at a real backend - not only a Zod schema. Here it is on [frameboard](https://github.com/james-kanghj/frameboard) (a FastAPI + Pydantic app): Pydantic emits the JSON Schema for its RICE-scoring request - bounds, enum, and `uuid` format and all - and adversary turns each field into explained boundary and equivalence-class probes. It reads `confidence`'s `0..1` range and generates the exact edge values (`-1`, `0`, `1`, `2`), and it knows `impact` is an enum, so it generates `0.75` - in range, but not a declared member (the case a `min <= x <= max` shortcut lets through).
+
+<div align="center">
+<img src="https://raw.githubusercontent.com/james-kanghj/adversary/main/examples/frameboard-demo.gif" alt="adversary CLI: a FastAPI/Pydantic model turned into explained boundary and enum probes" width="820">
+</div>
+
+Any schema source works the same way: `python -c "import json; from app.schemas import RICEScoreRequest; print(json.dumps(RICEScoreRequest.model_json_schema()))" > rice.json` then `npx adversary rice.json --report`.
+
 ## What you get
 
 Each fixture is:
