@@ -12,7 +12,9 @@ Generate **explained** adversarial test inputs from a schema - boundary values, 
 
 </div>
 
-Point `adversary` at a Zod schema and get back the values most likely to break your code, each with a technique label and a plain-language failure hypothesis.
+**What it is:** a test-input generator. Hand it a Zod schema and it returns a list of the values most likely to break the code behind it, each labelled with the technique that produced it and a plain-language reason it might fail.
+
+**What it is not:** a scanner or a linter. It does not run your code, find bugs, or warn you. It hands you the hostile inputs; you feed them into your own tests (where your assertions, or the schema's own `safeParse`, do the checking) or render them as a report. `adversary(schema)` returns plain data - an array you use:
 
 ```ts
 import { z } from 'zod'
@@ -34,15 +36,32 @@ adversary(Signup)
 // ]
 ```
 
-## Why
+## Who it is for
 
-Testing input handling means throwing hostile values at it. Today you either:
+Anyone who validates untrusted input with **Zod** - a form body, an API request, a webhook, a config file - and wants that input handling tested against hostile values, without hand-writing every edge case or being an i18n/security expert. It packages QA craft (boundary-value analysis, equivalence partitioning, a curated Unicode and injection catalog) so you get it from a schema for free. QA engineers use it to automate what they would test by hand; the report also serves a security or PR review.
 
-- **hand-write them** - tedious, and you do not know the obscure i18n cases;
-- **use a property-based fuzzer** (fast-check) - powerful, but random and opaque: no explanation, no i18n depth, you write the generators yourself;
-- **paste a list of naughty strings** - just strings, not tied to your schema and with no boundary values.
+## When you would reach for it
 
-`adversary` sits in the gap. Every value it produces is **explainable** - a human can read the `failureHypothesis` and decide whether the case is worth keeping - and the Unicode catalog encodes localization-QA knowledge a generic generator does not ship. It does not compete with fast-check; it complements it.
+- **You just wrote a Zod schema** for something that receives outside input and want hostile-input tests in CI - one `test.each(adversary(Schema))` line ([example](examples/shift-left.test.ts)).
+- **You are hardening an endpoint** and want to see, concretely, which dangerous values your schema still lets through.
+- **You are reviewing a PR** and want a risk-ranked, explained list of the inputs that field invites - `toMarkdown(...)` or `npx adversary schema.ts --report`.
+
+The aha: `z.url()` looks like it keeps bad URLs out. It does not, and adversary shows you exactly which ones slip past validation, so you know the code behind the field is the real line of defense:
+
+```ts
+const Webhook = z.object({ callbackUrl: z.url() })
+
+for (const f of adversary(Webhook, { techniques: ['injection'] })) {
+  const passes = Webhook.safeParse({ callbackUrl: f.value }).success
+  console.log(passes ? 'ACCEPTED' : 'rejected', f.family, JSON.stringify(f.value))
+}
+// ACCEPTED  javascript-scheme     "javascript:alert(document.domain)"   <- XSS if used as an href
+// ACCEPTED  file-scheme           "file:///etc/passwd"                  <- local file read
+// ACCEPTED  cloud-metadata-ssrf   "http://169.254.169.254/latest/..."   <- SSRF to instance credentials
+// ...validation passed on all of them. That is the point: validation is not safety.
+```
+
+Compared with the alternatives: hand-writing misses the obscure cases; a property fuzzer (fast-check) is random and opaque and you write the generators; a naughty-strings list is just strings, not tied to your schema and with no boundary values or explanations. adversary is deterministic, schema-derived, and every value explains itself - it complements fast-check, it does not compete.
 
 ## Install
 
