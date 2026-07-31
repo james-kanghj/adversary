@@ -55,7 +55,7 @@ describe('pack claims match Zod', () => {
   })
 
   it('uri: z.url() accepts every dangerous scheme and host in the pack', () => {
-    for (const fam of ['javascript-scheme', 'data-scheme', 'file-scheme', 'cloud-metadata-ssrf', 'obfuscated-host', 'userinfo-host-confusion', 'localhost-ssrf', 'ipv6-loopback-ssrf', 'idn-homograph-host']) {
+    for (const fam of ['javascript-scheme', 'data-scheme', 'file-scheme', 'cloud-metadata-ssrf', 'obfuscated-host', 'userinfo-host-confusion', 'localhost-ssrf', 'ipv6-loopback-ssrf', 'idn-homograph-host', 'backslash-authority']) {
       expect(z.url().safeParse(byFamily('uri', fam).value).success, fam).toBe(true)
     }
   })

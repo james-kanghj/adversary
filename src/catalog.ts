@@ -301,7 +301,7 @@ export const packs: Record<string, CatalogEntry[]> = {
       technique: 'injection',
       family: 'data-scheme',
       failureHypothesis:
-        'A data: URL carrying HTML. z.url() accepts it, and where the app allows data: as a resource (an iframe or embed src, a download, or a non-strict context), the browser renders attacker-controlled content straight from the URL - a scheme many CSP and sanitizer configs overlook.',
+        'A data: URL carrying HTML. z.url() accepts it; a data: document loads with an opaque origin (so it cannot read the app\'s cookies) but can still render attacker-controlled content for phishing or UI spoofing, and it slips past host allowlists and many CSP and sanitizer configs that only reason about http(s) hosts.',
     },
     {
       value: 'file:///etc/passwd',
@@ -352,6 +352,13 @@ export const packs: Record<string, CatalogEntry[]> = {
       failureHypothesis:
         'A URL host as an internationalized (punycode) domain. z.url() accepts it, and the host can render as a non-ASCII visual lookalike of a trusted domain, so a link or an allowlist that a human or an ASCII-only check trusts actually points elsewhere.',
     },
+    {
+      value: 'https://expected.test\\@evil.test/',
+      technique: 'injection',
+      family: 'backslash-authority',
+      failureHypothesis:
+        'A backslash before the @. For a special scheme the WHATWG URL parser (browsers, Node) treats \\ as /, so it ends the authority at expected.test and pushes @evil.test into the path, while a validator that splits on @ reads the host as evil.test. z.url() accepts it and the two parsers disagree on the host, so a host allowlist or SSRF check on one can diverge from where the client actually connects.',
+    },
   ],
 
   // -- uuid (Zod z.uuid()) ------------------------------------------------------------
@@ -368,7 +375,7 @@ export const packs: Record<string, CatalogEntry[]> = {
       technique: 'EP',
       family: 'non-random-version',
       failureHypothesis:
-        'A version-1 UUID. z.uuid() accepts any version, not just v4, so if code treats a UUID as an unguessable token, this passes validation though it encodes a timestamp and MAC address and is largely predictable - not the randomness the code assumed.',
+        'A version-1 UUID. z.uuid() accepts any RFC version (1 through 8), not only v4, so if code treats a UUID as an unguessable token, a v1 value passes validation though it encodes a timestamp and MAC address and is largely predictable - not the randomness the code assumed.',
     },
     {
       value: '550E8400-E29B-41D4-A716-446655440000',

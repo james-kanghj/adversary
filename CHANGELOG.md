@@ -14,7 +14,8 @@ follow semantic versioning.
   oversized local part, plus-subaddressing, IP address literal, trailing-dot domain),
   `url` / `uri` (`javascript:` and `data:` XSS, `file://` read, cloud-metadata /
   localhost / IPv6-loopback SSRF, an integer-obfuscated host, an IDN homograph host,
-  userinfo host confusion), and `uuid` (nil, non-v4, uppercase, max, hyphenless,
+  userinfo host confusion, a backslash-authority parser split), and `uuid` (nil,
+  non-v4, uppercase, max, hyphenless,
   brace-wrapped). Many pass their format's own validator yet remain dangerous. Exposed
   via a new `packs` export.
 

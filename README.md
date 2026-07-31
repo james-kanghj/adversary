@@ -147,7 +147,7 @@ Every field also gets `null` and `absent` (undefined) probes whose validity trac
 When a string field declares a `format` - `z.email()`, `z.url()`, `z.uuid()` - adversary injects extra hostile inputs aimed at that format's own parsers and consumers, on top of the general catalog:
 
 - **email**: CRLF header injection, a punycode homograph domain, an oversized (RFC-over-limit) local part, plus-subaddressing, an IP address literal, and a DNS-rooted trailing-dot domain.
-- **url** (`uri`): `javascript:` and `data:` scheme XSS, a `file://` read, cloud-metadata / localhost / IPv6-loopback SSRF, an integer-obfuscated host, an IDN homograph host, and userinfo host confusion (`https://trusted@evil.test`).
+- **url** (`uri`): `javascript:` and `data:` scheme XSS, a `file://` read, cloud-metadata / localhost / IPv6-loopback SSRF, an integer-obfuscated host, an IDN homograph host, userinfo host confusion (`https://trusted@evil.test`), and a backslash-authority parser split.
 - **uuid**: the nil UUID, a non-v4 (predictable) UUID, an uppercase UUID, the max UUID, and the hyphenless and brace-wrapped forms.
 
 Several of these **pass `z.email()` / `z.url()` / `z.uuid()` validation** yet remain dangerous, which is the point: validation alone does not make them safe. The packs live in `src/catalog.ts` and are designed to grow - a new format is a new key.
