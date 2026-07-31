@@ -1,12 +1,14 @@
-# adversary
+<div align="center">
 
-[![npm](https://img.shields.io/npm/v/adversary.svg)](https://www.npmjs.com/package/adversary)
-[![CI](https://github.com/james-kanghj/adversary/actions/workflows/ci.yml/badge.svg)](https://github.com/james-kanghj/adversary/actions/workflows/ci.yml)
-[![types](https://img.shields.io/npm/types/adversary.svg)](https://www.npmjs.com/package/adversary)
-[![license: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
-[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+# Adversary
 
-Generate **explained** adversarial test inputs from a schema. Point it at a Zod schema and get back the values most likely to break your code - boundary values, i18n/Unicode edge cases, and injection strings - each labelled with the technique that produced it and a plain-language reason it might fail.
+[![npm](https://img.shields.io/npm/v/adversary.svg)](https://www.npmjs.com/package/adversary) [![CI](https://github.com/james-kanghj/adversary/actions/workflows/ci.yml/badge.svg)](https://github.com/james-kanghj/adversary/actions/workflows/ci.yml) [![types](https://img.shields.io/npm/types/adversary.svg)](https://www.npmjs.com/package/adversary) [![license: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE) [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+Generate **explained** adversarial test inputs from a schema - boundary values, i18n/Unicode edge cases, and injection strings, each labelled with the technique that produced it and a plain-language reason it might fail.
+
+</div>
+
+Point `adversary` at a Zod schema and get back the values most likely to break your code, each with a technique label and a plain-language failure hypothesis.
 
 ```ts
 import { z } from 'zod'
