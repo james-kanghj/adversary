@@ -12,11 +12,12 @@ import type { FieldSpec } from './schema-spec.js'
 import type { Fixture, Technique } from './types.js'
 
 export type { Fixture, Technique, Validity, CatalogEntry } from './types.js'
-export type { FieldSpec, SchemaSpec, FieldType } from './schema-spec.js'
 export type { SchemaLike } from './introspect.js'
 export { catalog, packs } from './catalog.js'
 export { toMarkdown, type MarkdownOptions } from './report.js'
-export { jsonSchemaToSpec } from './schema-spec.js'
+// Note: the internal field/schema spec (FieldSpec, SchemaSpec, jsonSchemaToSpec)
+// is intentionally not part of the public API - it is free to change without a
+// major bump. Use adversary() / fromJsonSchema() and the Fixture output.
 
 export interface AdversaryOptions {
   /** Only include these techniques. */
@@ -42,6 +43,9 @@ export function adversary(schema: SchemaLike, opts?: AdversaryOptions): Fixture[
 
 /** Same as {@link adversary}, but from a plain JSON Schema object - no Zod required. */
 export function fromJsonSchema(json: unknown, opts?: AdversaryOptions): Fixture[] {
+  if (json === null || typeof json !== 'object' || Array.isArray(json)) {
+    throw new TypeError('fromJsonSchema(json): expected a JSON Schema object, e.g. { type: "object", properties: {...} }.')
+  }
   return generate(jsonSchemaToSpec(json), opts)
 }
 

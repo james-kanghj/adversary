@@ -9,7 +9,7 @@ import type { CatalogEntry } from './types.js'
  * escapes and the source is kept ASCII-only on purpose - the exact code points
  * are the whole point, so we never rely on file encoding or editor normalization.
  */
-export const catalog: CatalogEntry[] = [
+export const catalog: readonly CatalogEntry[] = [
   // -- Internationalization / Unicode -------------------------------------------------
   {
     value: 'café', // "cafe" + U+0301 combining acute = "cafe" in NFD form
@@ -240,7 +240,7 @@ export const catalog: CatalogEntry[] = [
  * Keyed by the JSON Schema `format` string Zod emits (email, uri, uuid, ...).
  * Community packs are welcome here - see CONTRIBUTING.md.
  */
-export const packs: Record<string, CatalogEntry[]> = {
+export const packs: Readonly<Record<string, readonly CatalogEntry[]>> = {
   // -- email (Zod z.email()) ----------------------------------------------------------
   email: [
     {
