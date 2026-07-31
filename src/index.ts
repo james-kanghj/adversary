@@ -14,7 +14,7 @@ import type { Fixture, Technique } from './types.js'
 export type { Fixture, Technique, Validity, CatalogEntry } from './types.js'
 export type { FieldSpec, SchemaSpec, FieldType } from './schema-spec.js'
 export type { SchemaLike } from './introspect.js'
-export { catalog } from './catalog.js'
+export { catalog, packs } from './catalog.js'
 export { toMarkdown, type MarkdownOptions } from './report.js'
 export { jsonSchemaToSpec } from './schema-spec.js'
 

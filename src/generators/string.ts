@@ -1,6 +1,6 @@
 import type { FieldSpec } from '../schema-spec.js'
 import type { Fixture, Validity } from '../types.js'
-import { catalog } from '../catalog.js'
+import { catalog, packs } from '../catalog.js'
 
 const UNBOUNDED_PROBE_LENGTH = 10_000
 
@@ -64,9 +64,12 @@ export function stringFixtures(field: FieldSpec): Fixture[] {
     }
   }
 
-  // The hostile catalog. Whether each value is accepted is exactly the behaviour
-  // under test, so validity is deliberately left 'unknown'.
-  for (const entry of catalog) {
+  // The hostile catalog, plus a format-aware pack when the field declares a
+  // matching `format` (e.g. email/uri/uuid). Whether each value is accepted is
+  // exactly the behaviour under test, so validity is deliberately left 'unknown'.
+  const pack = field.format ? packs[field.format] : undefined
+  const entries = pack ? [...catalog, ...pack] : catalog
+  for (const entry of entries) {
     out.push({
       field: field.name,
       value: entry.value,

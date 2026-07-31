@@ -142,6 +142,16 @@ interface Fixture {
 
 Every field also gets `null` and `absent` (undefined) probes whose validity tracks the field's `nullable` and `required` flags. Nested objects are read at the top level only for now; deeper nesting is on the roadmap.
 
+### Format-aware packs
+
+When a string field declares a `format` - `z.email()`, `z.url()`, `z.uuid()` - adversary injects extra hostile inputs aimed at that format's own parsers and consumers, on top of the general catalog:
+
+- **email**: CRLF header injection, a punycode homograph domain, an oversized (RFC-over-limit) local part, plus-subaddressing, and an IP address literal.
+- **url** (`uri`): `javascript:` and `data:` scheme XSS, a `file://` read, cloud-metadata and localhost SSRF, an integer-obfuscated host, and userinfo host confusion (`https://trusted@evil.test`).
+- **uuid**: the nil UUID, a non-v4 (predictable) UUID, an uppercase UUID, the max UUID, and the hyphenless and brace-wrapped forms.
+
+Several of these **pass `z.email()` / `z.url()` / `z.uuid()` validation** yet remain dangerous, which is the point: validation alone does not make them safe. The packs live in `src/catalog.ts` and are designed to grow - a new format is a new key.
+
 ## Options
 
 ```ts

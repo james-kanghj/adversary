@@ -28,12 +28,21 @@ Entries live in [`src/catalog.ts`](src/catalog.ts). Each is a `CatalogEntry`:
 ```ts
 {
   value: 'straße',                 // the hostile input
-  technique: 'i18n',               // 'i18n' | 'injection'
+  technique: 'i18n',               // 'BVA' | 'EP' | 'i18n' | 'injection'
   family: 'case-mapping-expansion',// short kebab-case slug naming the failure class
   failureHypothesis:
     'The German eszett. "ß".toUpperCase() is "SS", so uppercasing lengthens the string ...',
 }
 ```
+
+There are two homes for an entry. The general `catalog` array applies to **every**
+string field. A **format-aware pack** (`packs['email']`, `packs['url']` -> key
+`uri`, `packs['uuid']`, ...) applies only when a field declares that `format`, so
+its values can target that format's own parsers and consumers. Add your entry to
+the pack whose format it is specific to, or to the general catalog if it is not.
+A great pack entry is one that **passes** the format's validator yet is still
+dangerous (a `javascript:` URL that `z.url()` accepts, a homograph email domain),
+because it shows validation alone is not safety.
 
 Five rules, in priority order:
 

@@ -231,3 +231,144 @@ export const catalog: CatalogEntry[] = [
       'An XML external entity declaration. If the value is parsed as XML by a parser with external entities enabled, the entity is expanded from file:///etc/passwd, disclosing local files (XXE), and a parameter-entity variant can reach internal network services.',
   },
 ]
+
+/**
+ * Format-aware packs. When a string field declares a `format`, the entries under
+ * that key are injected in addition to the general catalog above, so the values
+ * target that format's own parsers and consumers (an email field gets email
+ * header-injection and homograph domains; a url field gets SSRF and scheme abuse).
+ * Keyed by the JSON Schema `format` string Zod emits (email, uri, uuid, ...).
+ * Community packs are welcome here - see CONTRIBUTING.md.
+ */
+export const packs: Record<string, CatalogEntry[]> = {
+  // -- email (Zod z.email()) ----------------------------------------------------------
+  email: [
+    {
+      value: 'a@b.co\r\nBcc: attacker@evil.test',
+      technique: 'injection',
+      family: 'crlf-header-injection',
+      failureHypothesis:
+        'A valid-looking address followed by a CRLF and an injected header. z.email() rejects the embedded CR/LF, but a looser hand-rolled check does not, and if the raw value is concatenated into a message\'s headers by a mail library, the injected line forges a Bcc, Reply-To, or Subject (email header injection).',
+    },
+    {
+      value: 'user@xn--80ak6aa92e.com',
+      technique: 'i18n',
+      family: 'homograph-domain',
+      failureHypothesis:
+        'An internationalized domain in punycode (xn--) form. z.email() accepts it, so a domain that renders as a non-ASCII visual lookalike of a trusted one passes validation - spoofing the sender to a human, or slipping past a domain allowlist that only lists the ASCII original.',
+    },
+    {
+      value: 'a'.repeat(65) + '@example.com',
+      technique: 'BVA',
+      family: 'oversized-local-part',
+      failureHypothesis:
+        'A local part of 65 characters. z.email() accepts it, but RFC 5321 caps the local part at 64 octets (and the whole path at 256), so a strict MTA or a fixed-width database column can reject or silently truncate an address your validator allowed, diverging on the same input.',
+    },
+    {
+      value: 'user+adversary@example.com',
+      technique: 'EP',
+      family: 'plus-subaddressing',
+      failureHypothesis:
+        'A plus-address (subaddress). It is a valid, accepted address that most providers deliver to the same mailbox as the base address, so a per-address uniqueness constraint, block list, or one-signup-per-email rule that keys on the literal string is trivially bypassed with unlimited variants.',
+    },
+    {
+      value: 'user@[127.0.0.1]',
+      technique: 'EP',
+      family: 'address-literal-ip',
+      failureHypothesis:
+        'An address literal with an IP host in brackets. z.email() rejects it, but RFC 5321 permits it, so a more permissive validator or MTA can accept it and attempt delivery straight to an IP address, bypassing domain-based routing and allow/deny lists.',
+    },
+  ],
+
+  // -- uri (Zod z.url()) --------------------------------------------------------------
+  uri: [
+    {
+      value: 'javascript:alert(document.domain)',
+      technique: 'injection',
+      family: 'javascript-scheme',
+      failureHypothesis:
+        'A javascript: URL. z.url() accepts it (javascript is a valid URL scheme), so if the value is later used as an href, src, or window.open target without a scheme allowlist, it executes script in the page (XSS).',
+    },
+    {
+      value: 'data:text/html,<script>alert(1)</script>',
+      technique: 'injection',
+      family: 'data-scheme',
+      failureHypothesis:
+        'A data: URL carrying HTML. z.url() accepts it, and if it is used as an href or an iframe src, the browser renders attacker-controlled HTML and script straight from the URL.',
+    },
+    {
+      value: 'file:///etc/passwd',
+      technique: 'injection',
+      family: 'file-scheme',
+      failureHypothesis:
+        'A file:// URL. z.url() accepts it, so if the value is fetched server-side (an SSRF-style fetch, an image or PDF renderer, a webhook), it can read a local file instead of a remote resource.',
+    },
+    {
+      value: 'http://169.254.169.254/latest/meta-data/',
+      technique: 'injection',
+      family: 'cloud-metadata-ssrf',
+      failureHypothesis:
+        'The cloud metadata endpoint (169.254.169.254). z.url() accepts it, so a server-side fetch of a user-supplied URL can read instance credentials and configuration from the metadata service - the classic SSRF-to-credential-theft path.',
+    },
+    {
+      value: 'http://2130706433/',
+      technique: 'injection',
+      family: 'obfuscated-host',
+      failureHypothesis:
+        'The loopback address written as a 32-bit integer (2130706433 is 127.0.0.1). z.url() accepts it and the OS resolves it to localhost, so a string-based allow/deny list matching "127.0.0.1" or "localhost" is bypassed while the request still reaches the internal host (SSRF).',
+    },
+    {
+      value: 'https://www.google.com@evil.test/',
+      technique: 'injection',
+      family: 'userinfo-host-confusion',
+      failureHypothesis:
+        'A URL whose authority puts a trusted-looking name in the userinfo, before the @, so the real host is evil.test. z.url() accepts it; a human or a naive check scanning for "google.com" is fooled while the browser or fetch connects to the host after the @.',
+    },
+  ],
+
+  // -- uuid (Zod z.uuid()) ------------------------------------------------------------
+  uuid: [
+    {
+      value: '00000000-0000-0000-0000-000000000000',
+      technique: 'EP',
+      family: 'nil-uuid',
+      failureHypothesis:
+        'The nil UUID (all zeros). z.uuid() accepts it as a valid UUID, but it is widely used as a sentinel for "none"/unset, so it can satisfy a required-UUID check yet collide with default rows, break a NOT-NULL-by-convention assumption, or match an uninitialized foreign key.',
+    },
+    {
+      value: 'c232ab00-9414-11ec-b3c8-9f6bdeced846',
+      technique: 'EP',
+      family: 'non-random-version',
+      failureHypothesis:
+        'A version-1 UUID. z.uuid() accepts any version, not just v4, so if code treats a UUID as an unguessable token, this passes validation though it encodes a timestamp and MAC address and is largely predictable - not the randomness the code assumed.',
+    },
+    {
+      value: '550E8400-E29B-41D4-A716-446655440000',
+      technique: 'EP',
+      family: 'uuid-uppercase',
+      failureHypothesis:
+        'An uppercase UUID. z.uuid() accepts it, but layers disagree on case: PostgreSQL normalizes UUIDs to lowercase on storage while a string comparison or cache key is case-sensitive, so the same UUID can miss a lookup or create a duplicate across tiers.',
+    },
+    {
+      value: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+      technique: 'BVA',
+      family: 'max-uuid',
+      failureHypothesis:
+        'The max UUID (all f). z.uuid() accepts it; a valid but extreme value that can special-case in code using UUIDs as sort keys or range bounds, and pairs with the nil UUID as the two boundary sentinels.',
+    },
+    {
+      value: '550e8400e29b41d4a716446655440000',
+      technique: 'EP',
+      family: 'uuid-hyphenless',
+      failureHypothesis:
+        'The 32-hex form with no hyphens. z.uuid() rejects it, but many libraries and databases accept or emit the unhyphenated form, so a UUID produced by another system can round-trip back as invalid, or two representations of the same UUID compare unequal.',
+    },
+    {
+      value: '{550e8400-e29b-41d4-a716-446655440000}',
+      technique: 'EP',
+      family: 'uuid-braced',
+      failureHypothesis:
+        'The brace-wrapped form. z.uuid() rejects it, but .NET Guid.ToString("B") emits exactly this, so a UUID crossing a .NET boundary arrives in a shape your validator refuses even though it denotes the same value.',
+    },
+  ],
+}

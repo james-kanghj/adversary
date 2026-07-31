@@ -32,10 +32,14 @@ export interface Fixture {
   valid: Validity
 }
 
-/** A curated hostile input plus the reason it is dangerous. */
+/**
+ * A curated hostile input plus the reason it is dangerous. The general catalog is
+ * all i18n/injection, but format-aware packs also carry BVA/EP edges (an oversized
+ * email local part, the nil UUID), so the technique spans the full set.
+ */
 export interface CatalogEntry {
   value: string
-  technique: Extract<Technique, 'i18n' | 'injection'>
+  technique: Technique
   family: string
   failureHypothesis: string
 }

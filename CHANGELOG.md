@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to
 follow semantic versioning.
 
+## [Unreleased]
+
+### Added
+
+- Format-aware packs: when a string field declares a `format`, extra hostile inputs
+  targeting that format's own parsers and consumers are injected on top of the general
+  catalog. Packs ship for `email` (CRLF header injection, punycode homograph domain,
+  oversized local part, plus-subaddressing, IP address literal), `url` / `uri`
+  (`javascript:` and `data:` XSS, `file://` read, cloud-metadata and localhost SSRF, an
+  integer-obfuscated host, userinfo host confusion), and `uuid` (nil, non-v4, uppercase,
+  max, hyphenless, brace-wrapped). Many pass their format's own validator yet remain
+  dangerous. Exposed via a new `packs` export.
+
 ## [0.3.0] - 2026-07-31
 
 ### Added
